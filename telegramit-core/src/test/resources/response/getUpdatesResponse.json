@@ -1,0 +1,26 @@
+{
+  "ok":true,
+  "result":[
+    {
+      "update_id":598272256,
+      "message":{
+        "message_id":485,
+        "from":{
+          "id":506658066,
+          "is_bot":false,
+          "first_name":"Vitaxa",
+          "username":"Vitaxa64",
+          "language_code":"ru"
+        },
+        "chat":{
+          "id":506658066,
+          "first_name":"Vitaxa",
+          "username":"Vitaxa64",
+          "type":"private"
+        },
+        "date":1585584827,
+        "text":"fff"
+      }
+    }
+  ]
+}

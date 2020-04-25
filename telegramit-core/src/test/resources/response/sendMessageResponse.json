@@ -1,0 +1,20 @@
+{
+  "ok":true,
+  "result":{
+    "message_id":484,
+    "from":{
+      "id":1142232760,
+      "is_bot":true,
+      "first_name":"Subscriptor",
+      "username":"JoeBridgesBot"
+    },
+    "chat":{
+      "id":506658066,
+      "first_name":"Vitaxa",
+      "username":"Vitaxa64",
+      "type":"private"
+    },
+    "date":1585583727,
+    "text":"Just some message"
+  }
+}
