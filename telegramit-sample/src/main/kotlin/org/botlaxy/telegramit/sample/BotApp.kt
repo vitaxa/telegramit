@@ -15,9 +15,5 @@ fun main(args: Array<String>) {
             login = "vitaxa"
             password = "subprox"
         }
-        handlerScriptConfig {
-            handlerScriptPath = "telegramit/sample/handlers"
-            handlerHotReload = true
-        }
     }.start()
 }

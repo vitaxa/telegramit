@@ -15,16 +15,18 @@ java {
 
 repositories {
     jcenter()
-    mavenLocal()
+    maven {
+        setUrl("https://dl.bintray.com/vitaxa/telegramit/")
+    }
     mavenCentral()
 }
 
-val telegramitVersion = "0.0.18"
+val telegramitVersion = "0.0.21"
 
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
     implementation(kotlin("script-runtime"))
-    implementation("org.botlaxy:telegramit:$telegramitVersion")
+    implementation("org.botlaxy:telegramit-core:${telegramitVersion}")
 }
 
 tasks.withType<ShadowJar> {

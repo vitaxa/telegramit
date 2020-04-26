@@ -14,6 +14,29 @@ Notice! Please, leave your issues, if you don’t have something important in th
 
 - The simplest configuration and Bot’s launch
 
+## Setup:
+
+```
+repositories {
+    maven {
+        setUrl("https://dl.bintray.com/vitaxa/telegramit/")
+    }
+}
+```
+
+Gradle:
+
+`implementation("org.botlaxy:telegramit-core:0.0.21")`
+
+Maven:
+```
+<dependency>
+    <groupId>org.botlaxy</groupId>
+    <artifactId>telegramit-core</artifactId>
+    <version>0.0.21</version>
+</dependency>
+```
+
 ## Getting Started:
 ```
 bot {
