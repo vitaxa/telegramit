@@ -1,7 +1,7 @@
 Let’s consider a simple example of the Chat Bot with questioner filling. Example of this [questionary handler](./src/main/resources/handlers/questionary/questionary-dialog.kts).
  
 You should make the next step to start a command process with the Chat Bot:
-```
+```Kotlin
 handler("/questionary") {
 }
 ```
@@ -10,7 +10,7 @@ Now you can write a massage to the Bot `/questionary`, and handler will work.
 
 The first thing executing will begin with is the first described step and its entry block:
 
-```
+```Kotlin
 step<String>("fio") {
     entry { _, _ ->
         TextMessage("Write your name")
@@ -28,7 +28,7 @@ You’ll understand, why we need these later. All I can say, that returnable typ
 The **resolver block** – it’s a part of code, which allows you somehow to modify a received message from the user after answering on the entry block.  
 In this instance, we are getting the user’s message itself in order to not work with the whole structure of the TelegramMessage:  
 
-```
+```Kotlin
 resolver { msg ->
     msg.text!!
 }
@@ -38,7 +38,7 @@ Before calling the **resolver block** (after answering on the entry block) a **v
  
 In our example the **validation block** is checking the user actually did send us a message instead of sending us an image or something else:
 
-```
+```Kotlin
 validation { msg ->
     if (msg.text == null) {
         TextMessage("I asked for name :angry:".emojize())
@@ -56,7 +56,7 @@ At last the weightiest block is the **process block**. In this block we are gett
 
 As I said earlier, the type, returned by step, is important for us, because only there you can see the differ of returning results:
 
-```
+```Kotlin
 val fio = ctx.answer["fio"] as String
 val age = ctx.answer["age"] as TelegramMessage
 ```
