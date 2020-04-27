@@ -38,7 +38,7 @@ Maven:
 ```
 
 ## Getting Started:
-```
+```Kotlin
 bot {
     name = "WeatherBot"
     token = "2416754356:ZCRTBs_wqGvGJNvfTzP7-3Rc3KDW1mQile3"
@@ -47,7 +47,7 @@ bot {
 Both of the field are required, you can get Bot’s token from [BotFather](#BotFather "https://tele.gs/botfather"). 
 
 The Bot’s launch with proxy:
-```
+```Kotlin
 bot {
     name = "WeatherBot"
     token = "2416754356:ZCRTBs_wqGvGJNvfTzP7-3Rc3KDW1mQile3"
@@ -66,14 +66,14 @@ The logic of Bot is described with DSL constructions (Kotlin DSL). You have two 
 The first one is when you place kts script into the resource folder: resources/handlers/SimpleHandler.kts. 
 
 And the second one is any path in your system. By the way, this choice supports HotReload in the production environment:
-```
+```Kotlin
 handlerScriptConfig { 
     handlerScriptPath = "telegramit/sample/handlers"
     handlerHotReload = true
 }
 ```
 Specify next configuration after the reloading, if you need the Bot to remember the current conversation:
-```
+```Kotlin
 persistenceConfig {
     conversationPersistence = MapDBConversationPersistence(JacksonContextSerializer())
 }
@@ -83,7 +83,7 @@ This is a default configuration, you can write your own, if you wish.
 Preservation is using ONLY for conversation saving at the moment. 
 
 The Poling method is used by default for the cooperation with the Telegram API. If you need to change to the Webhook: 
-```
+```Kotlin
 client { 
     type = TelegramClientType.WEBHOOK
     host = "botlaxy.org"
@@ -92,7 +92,7 @@ client {
 ```
 
 Besides, there is an opportunity for customizing some characteristic (https://core.telegram.org/bots/api#getupdates) of the Poling method:
-```
+```Kotlin
 client {
     type = TelegramClientType.POOLING
     limit = 10
