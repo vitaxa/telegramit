@@ -96,7 +96,7 @@ class Bot private constructor(
         telegramClientConfig: TelegramClientConfig
     ): TelegramClient {
         return when (telegramClientConfig.telegramClientType) {
-            TelegramClientType.POOLING -> {
+            TelegramClientType.POLLING -> {
                 TelegramPollingClient(
                     telegramApi,
                     updateListener,
@@ -154,7 +154,7 @@ class Bot private constructor(
 
         lateinit var token: String
 
-        var telegramClientConfig: TelegramClientConfig = TelegramPoolingClientConfig(TelegramClientType.POOLING)
+        var telegramClientConfig: TelegramClientConfig = TelegramPoolingClientConfig(TelegramClientType.POLLING)
 
         var proxyConfig: ProxyConfig? = null
 
@@ -281,7 +281,7 @@ class Bot private constructor(
         var limit: Int? = null
 
         fun build(): TelegramPoolingClientConfig {
-            return TelegramPoolingClientConfig(TelegramClientType.POOLING, timeout, limit)
+            return TelegramPoolingClientConfig(TelegramClientType.POLLING, timeout, limit)
         }
     }
 
@@ -295,7 +295,7 @@ class Bot private constructor(
 
         fun build(): TelegramClientConfig {
             return when (type) {
-                TelegramClientType.POOLING -> {
+                TelegramClientType.POLLING -> {
                     TelegramPoolingClientConfig(type, timeout, limit)
                 }
                 TelegramClientType.WEBHOOK -> {

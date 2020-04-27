@@ -80,9 +80,9 @@ persistenceConfig {
 ```
 This is a default configuration, you can write your own, if you wish. 
 
-Preservation is using ONLY for conversation saving at the moment. 
+Preservation is using **ONLY** for conversation saving at the moment. 
 
-The Poling method is used by default for the cooperation with the Telegram API. If you need to change to the Webhook: 
+The Polling method is used by default for the cooperation with the Telegram API. If you need to change to the Webhook: 
 ```Kotlin
 client { 
     type = TelegramClientType.WEBHOOK
@@ -91,7 +91,7 @@ client {
 }
 ```
 
-Besides, there is an opportunity for customizing some characteristic (https://core.telegram.org/bots/api#getupdates) of the Poling method:
+Besides, there is an opportunity for customizing some characteristic (https://core.telegram.org/bots/api#getupdates) of the Polling method:
 ```Kotlin
 client {
     type = TelegramClientType.POOLING
@@ -110,7 +110,7 @@ client {
 - Full test coverage
 
 ## Thanks to:
-Special thanks to [Telegraff](#Telegraff "https://github.com/ruslanys/telegraff") for the inspiration and some code base. In addition, pay your attention to this library, if you use **Spring**. 
+Special thanks to [Telegraff]("https://github.com/ruslanys/telegraff") for the inspiration and some code base. In addition, pay your attention to this library, if you use **Spring**. 
 
 
 
