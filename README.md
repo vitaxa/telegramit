@@ -1,18 +1,18 @@
 ![Telegramit](doc/telegramit-logo.png)
 
-Telegramit is an attempt to make a convenient framework, involving the main functional for Telegram chat bot development.
+Telegramit is an attempt at creating a covenient framework that includes key functionality for developing Telegram chat bots.
 
-Notice! Please, leave your issues, if you don’t have something important in this realization, and I’ll add this soon.
+Notice! Please leave an issue if some important feature is missing in the current realisation: I will add it as soon as possible.
 
 ## Features:
 
-- Saving of the current conversation (in a case of application’s restart)
+- Conversation persistence (in case of application restarts)
 
-- Comfortable description of the script of the conversation using Kotlin DSL
+- Convenient conversation scenario description via Kotlin DSL
 
 - Hot reload for DSL scripts
 
-- The simplest configuration and Bot’s launch
+- Extremely simple configuration and deployment
 
 ## Setup:
 
@@ -44,9 +44,9 @@ bot {
     token = "2416754356:ZCRTBs_wqGvGJNvfTzP7-3Rc3KDW1mQile3"
 }.start()
 ```
-Both of the field are required, you can get Bot’s token from [BotFather](#BotFather "https://tele.gs/botfather"). 
+Both fields are required, a `token` for your bot can be acquired from [BotFather](#BotFather "https://tele.gs/botfather"). 
 
-The Bot’s launch with proxy:
+Deploying a bot using a proxy:
 ```Kotlin
 bot {
     name = "WeatherBot"
@@ -61,28 +61,28 @@ bot {
 }.start()
 ```
 
-The logic of Bot is described with DSL constructions (Kotlin DSL). You have two ways, how you could place them. 
+The logic of a bot is described using DSL constructions (Kotlin DSL). There are two ways of adding it:
 
-The first one is when you place kts script into the resource folder: resources/handlers/SimpleHandler.kts. 
+either place your `.kts` script into the resource folder: `resources/handlers/SimpleHandler.kts`;
 
-And the second one is any path in your system. By the way, this choice supports HotReload in the production environment:
+or add any path in your system. This choice supports hot reaload in the production environment:
 ```Kotlin
 handlerScriptConfig { 
     handlerScriptPath = "telegramit/sample/handlers"
     handlerHotReload = true
 }
 ```
-Specify next configuration after the reloading, if you need the Bot to remember the current conversation:
+If you need the bot to persist its current conversation, this configuration is required:
 ```Kotlin
 persistenceConfig {
     conversationPersistence = MapDBConversationPersistence(JacksonContextSerializer())
 }
 ```
-This is a default configuration, you can write your own, if you wish. 
+This is the default configuration but you are free to change it.
 
-Preservation is using **ONLY** for conversation saving at the moment. 
+Persistence is currently used ONLY for the conversation context. 
 
-The Polling method is used by default for the cooperation with the Telegram API. If you need to change to the Webhook: 
+The `Polling` method is used by default for interacting with the Telegram API. Use this configuration if you need to change to `Webhook`: 
 ```Kotlin
 client { 
     type = TelegramClientType.WEBHOOK
@@ -91,7 +91,7 @@ client {
 }
 ```
 
-Besides, there is an opportunity for customizing some characteristic (https://core.telegram.org/bots/api#getupdates) of the Polling method:
+You can also customise some characteristics of the `Polling` method:
 ```Kotlin
 client {
     type = TelegramClientType.POOLING
@@ -105,12 +105,12 @@ client {
 
 - Inline mode
 
-- Improvement of the functioning at the Webhook client
+- Improve the `Webhook` client
 
 - Full test coverage
 
 ## Thanks to:
-Special thanks to [Telegraff]("https://github.com/ruslanys/telegraff") for the inspiration and some code base. In addition, pay your attention to this library, if you use **Spring**. 
+Special thanks to [Telegraff](#Telegraff "https://github.com/ruslanys/telegraff") for the inspiration and some code base. In addition, pay your attention to this library, if you use **Spring**. 
 
 
 
