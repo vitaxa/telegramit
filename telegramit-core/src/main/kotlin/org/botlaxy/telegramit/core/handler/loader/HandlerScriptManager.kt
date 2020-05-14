@@ -8,8 +8,8 @@ import org.botlaxy.telegramit.core.handler.dsl.Handler
 import org.botlaxy.telegramit.core.handler.loader.collect.ClassPathScriptCollector
 import org.botlaxy.telegramit.core.handler.loader.collect.DirectoryScriptCollector
 import org.botlaxy.telegramit.core.handler.loader.collect.ScriptCollector
+import org.botlaxy.telegramit.core.handler.loader.collect.ScriptCollectorException
 import org.botlaxy.telegramit.core.handler.loader.compile.HandlerScriptCompiler
-import java.io.File
 import java.nio.file.*
 import java.nio.file.attribute.BasicFileAttributes
 
@@ -19,7 +19,7 @@ class HandlerScriptManager(
     private val handlerScriptCompiler: HandlerScriptCompiler,
     val handlerScriptDir: String?,
     val handlerHotReload: Boolean = false,
-    private val scriptChangeListener: ScriptUpdateListener? = null
+    private val scriptChangeListener: ((oldHandler: Handler?, newHandler: Handler) -> Unit)? = null
 ) {
 
     private val handlerScriptPath: Path = if (handlerScriptDir != null) {
@@ -42,7 +42,12 @@ class HandlerScriptManager(
     private var handlerWatchThread: Thread? = null
 
     fun compileHandlerFiles(): List<Handler> {
-        val handlerScriptFiles = handlerScriptCollector.collect()
+        val handlerScriptFiles: List<Path>
+        try {
+            handlerScriptFiles = handlerScriptCollector.collect()
+        } catch (e: ScriptCollectorException) {
+            throw IllegalStateException("Exception during collecting scripts", e)
+        }
 
         return if (handlerHotReload) {
             synchronized(mutex) {
@@ -136,7 +141,7 @@ class HandlerScriptManager(
                                 val oldHandler = fileHandlerMap[changedFile]
                                 val newHandler = handlerScriptCompiler.compile(changedFile)
                                 fileHandlerMap[changedFile] = newHandler
-                                scriptChangeListener?.onUpdate(oldHandler, newHandler)
+                                scriptChangeListener?.invoke(oldHandler, newHandler)
                             }
                         }
                     } catch (e: Exception) {

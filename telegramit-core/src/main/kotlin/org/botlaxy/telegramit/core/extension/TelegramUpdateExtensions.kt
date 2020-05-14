@@ -1,5 +1,6 @@
 package org.botlaxy.telegramit.core.extension
 
+import io.ktor.http.Headers
 import org.botlaxy.telegramit.core.client.model.TelegramMessage
 import org.botlaxy.telegramit.core.client.model.TelegramUpdate
 
@@ -28,7 +29,8 @@ fun TelegramUpdate.getMessage(): TelegramMessage? {
         }
         channelPost != null -> {
             channelPost
-        } else -> null
+        }
+        else -> null
     }
 }
 
@@ -41,5 +43,14 @@ fun TelegramUpdate.getEditMessage(): TelegramMessage? {
             editedChannelPost
         }
         else -> null
+    }
+}
+
+operator fun Headers.plus(other: Headers): Headers = when {
+    this.isEmpty() -> other
+    other.isEmpty() -> this
+    else -> Headers.build {
+        appendAll(this@plus)
+        appendAll(other)
     }
 }

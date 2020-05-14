@@ -21,7 +21,7 @@ repositories {
     mavenCentral()
 }
 
-val telegramitVersion = "0.0.21"
+val telegramitVersion = "0.0.22"
 
 dependencies {
     implementation(kotlin("stdlib-jdk8"))

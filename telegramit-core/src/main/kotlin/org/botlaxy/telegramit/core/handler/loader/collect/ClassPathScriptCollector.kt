@@ -4,10 +4,9 @@ import mu.KotlinLogging
 import org.botlaxy.telegramit.core.extension.getFileSystem
 import org.botlaxy.telegramit.core.handler.HandlerConstant
 import java.io.File
-import java.io.IOException
-import java.net.URI
 import java.net.URL
-import java.nio.file.*
+import java.nio.file.Files
+import java.nio.file.Path
 import java.util.*
 import kotlin.collections.HashSet
 

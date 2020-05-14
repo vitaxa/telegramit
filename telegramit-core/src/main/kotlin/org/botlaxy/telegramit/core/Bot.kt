@@ -1,5 +1,16 @@
 package org.botlaxy.telegramit.core
 
+import com.fasterxml.jackson.databind.DeserializationFeature
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.ProxyBuilder
+import io.ktor.client.engine.okhttp.OkHttp
+import io.ktor.client.features.json.JacksonSerializer
+import io.ktor.client.features.json.JsonFeature
+import io.ktor.client.features.logging.DEFAULT
+import io.ktor.client.features.logging.LogLevel
+import io.ktor.client.features.logging.Logger
+import io.ktor.client.features.logging.Logging
+import io.ktor.http.Url
 import mu.KotlinLogging
 import okhttp3.*
 import org.botlaxy.telegramit.core.client.*
@@ -12,10 +23,8 @@ import org.botlaxy.telegramit.core.handler.filter.HandlerUpdateFilter
 import org.botlaxy.telegramit.core.handler.filter.TelegramUpdateFilter
 import org.botlaxy.telegramit.core.handler.filter.UnknownUpdateFilter
 import org.botlaxy.telegramit.core.handler.loader.HandlerScriptManager
-import org.botlaxy.telegramit.core.handler.loader.ScriptUpdateListener
 import org.botlaxy.telegramit.core.handler.loader.compile.KotlinScriptCompiler
 import org.botlaxy.telegramit.core.listener.FilterUpdateListener
-import java.net.InetSocketAddress
 import java.net.PasswordAuthentication
 import java.net.Proxy
 import java.util.concurrent.TimeUnit
@@ -40,30 +49,34 @@ class Bot private constructor(
 
     private var telegramClient: TelegramClient? = null
 
+    private var telegramHttpClient: HttpClient? = null;
+
     private var conversationManager: ConversationManager? = null
 
     private var handlerScriptManager: HandlerScriptManager? = null
 
     fun start() {
-        val httpClient = buildOkHttp(proxyConfig)
-        val telegramApi = TelegramApi(httpClient, token)
+        telegramHttpClient = buildHttpClient(proxyConfig)
+        val telegramApi = TelegramApi(telegramHttpClient!!, token)
 
         val handlerHotReload = handlerScriptConfig?.handlerHotReload ?: false
         val handlerScriptPath = handlerScriptConfig?.handlerScriptPath
         handlerScriptManager =
-            HandlerScriptManager(KotlinScriptCompiler(), handlerScriptPath, handlerHotReload, object : ScriptUpdateListener {
-                override fun onUpdate(oldHandler: Handler?, newHandler: Handler) {
-                    logger.debug { "Handler was changed. From $oldHandler to $newHandler" }
-                    val clearConversation: Boolean = conversationPersistenceConfig?.clearOnHandlerChange ?: true
-                    if (clearConversation) {
-                        conversationManager?.clearAllConversation()
-                    }
-                    if (oldHandler != null) {
-                        conversationManager?.removeHandler(oldHandler)
-                    }
-                    conversationManager?.addHandler(newHandler)
+            HandlerScriptManager(
+                KotlinScriptCompiler(),
+                handlerScriptPath,
+                handlerHotReload
+            ) { oldHandler, newHandler ->
+                logger.debug { "Handler was changed. From $oldHandler to $newHandler" }
+                val clearConversation: Boolean = conversationPersistenceConfig?.clearOnHandlerChange ?: true
+                if (clearConversation) {
+                    conversationManager?.clearAllConversation()
                 }
-            })
+                if (oldHandler != null) {
+                    conversationManager?.removeHandler(oldHandler)
+                }
+                conversationManager?.addHandler(newHandler)
+            }
         val handlers: List<Handler> = handlerScriptManager!!.compileHandlerFiles()
         conversationManager = ConversationManager(
             telegramApi,
@@ -86,6 +99,7 @@ class Bot private constructor(
 
     fun stop() {
         telegramClient?.close()
+        telegramHttpClient?.close()
         handlerScriptManager?.closeWatchHandler()
         logger.info { "Bot '$name' successfully stopped" }
     }
@@ -114,37 +128,59 @@ class Bot private constructor(
         }
     }
 
-    private fun buildOkHttp(proxyConfig: ProxyConfig?): OkHttpClient {
-        val okHttpBuilder = OkHttpClient.Builder()
-        proxyConfig?.let {
-            // Proxy host and port
-            if (proxyConfig.host != null && proxyConfig.port != null) {
-                okHttpBuilder.proxy(Proxy(proxyConfig.type, InetSocketAddress(proxyConfig.host, proxyConfig.port)))
+    private fun buildHttpClient(proxyConfig: ProxyConfig?): HttpClient {
+        return HttpClient(OkHttp) {
+            install(JsonFeature) {
+                serializer = JacksonSerializer() {
+                    configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                }
             }
-            // Proxy auth
-            if (proxyConfig.login != null && proxyConfig.password != null) {
-                java.net.Authenticator.setDefault(object : java.net.Authenticator() {
-                    override fun getPasswordAuthentication(): PasswordAuthentication {
-                        return PasswordAuthentication(proxyConfig.login, proxyConfig.password.toCharArray())
-                    }
-                })
-                if (proxyConfig.type == Proxy.Type.HTTP) {
-                    val proxyAuthenticator: Authenticator = object : Authenticator {
-                        override fun authenticate(route: Route?, response: Response): Request? {
-                            val credential: String = Credentials.basic(proxyConfig.login, proxyConfig.password)
-                            return response.request.newBuilder()
-                                .header("Proxy-Authorization", credential)
-                                .build()
+            if (logger.isDebugEnabled) {
+                install(Logging) {
+                    logger = Logger.DEFAULT
+                    level = LogLevel.HEADERS
+                }
+            }
+            engine {
+                config {
+                    connectTimeout(30, TimeUnit.SECONDS)
+                    readTimeout(30, TimeUnit.SECONDS)
+                }
+            }
+            proxyConfig?.let {
+                if (proxyConfig.host != null && proxyConfig.port != null) {
+                    engine {
+                        if (proxyConfig.type == Proxy.Type.HTTP) {
+                            proxy = ProxyBuilder.http(Url("http://${proxyConfig.host}:${proxyConfig.port}"))
+                        } else if (proxyConfig.type == Proxy.Type.SOCKS) {
+                            proxy = ProxyBuilder.socks(host = proxyConfig.host, port = proxyConfig.port)
+                        }
+                        // Proxy auth
+                        if (proxyConfig.login != null && proxyConfig.password != null) {
+                            java.net.Authenticator.setDefault(object : java.net.Authenticator() {
+                                override fun getPasswordAuthentication(): PasswordAuthentication {
+                                    return PasswordAuthentication(proxyConfig.login, proxyConfig.password.toCharArray())
+                                }
+                            })
+                            if (proxyConfig.type == Proxy.Type.HTTP) {
+                                config {
+                                    val proxyAuthenticator: Authenticator = object : Authenticator {
+                                        override fun authenticate(route: Route?, response: Response): Request? {
+                                            val credential: String =
+                                                Credentials.basic(proxyConfig.login, proxyConfig.password)
+                                            return response.request().newBuilder()
+                                                .header("Proxy-Authorization", credential)
+                                                .build()
+                                        }
+                                    }
+                                    proxyAuthenticator(proxyAuthenticator)
+                                }
+                            }
                         }
                     }
-                    okHttpBuilder.proxyAuthenticator(proxyAuthenticator)
                 }
             }
         }
-        okHttpBuilder.readTimeout(30, TimeUnit.SECONDS)
-        okHttpBuilder.connectTimeout(30, TimeUnit.SECONDS)
-
-        return okHttpBuilder.build()
     }
 
     @BotDsl
@@ -174,8 +210,8 @@ class Bot private constructor(
             telegramClientConfig = TelegramClientBuilder().apply(block).build()
         }
 
-        fun proxy(block: ProxyBuilder.() -> Unit) = apply {
-            proxyConfig = ProxyBuilder().apply(block).build()
+        fun proxy(block: ProxyConfigBuilder.() -> Unit) = apply {
+            proxyConfig = ProxyConfigBuilder().apply(block).build()
         }
 
         fun updatesListener(block: BotBuilder.() -> UpdateListener) = apply {
@@ -263,7 +299,7 @@ class Bot private constructor(
     )
 
     @BotDsl
-    class ProxyBuilder {
+    class ProxyConfigBuilder {
         var host: String? = null
         var port: Int? = null
         var type: Proxy.Type = Proxy.Type.DIRECT

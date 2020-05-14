@@ -44,7 +44,7 @@ class TextMessage(
 ) : TelegramChatRequest(chatId, text, parseMode, replyKeyboard, disableWebPagePreview, disableNotification)
 
 class PhotoMessage(
-    photo: ByteArray,
+    photo: PhotoRequest,
     chatId: Long = 0L,
     replyKeyboard: TelegramReplyKeyboard? = null,
     disableNotification: Boolean = false,

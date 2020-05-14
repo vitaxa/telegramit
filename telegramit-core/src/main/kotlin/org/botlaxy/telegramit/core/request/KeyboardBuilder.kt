@@ -9,7 +9,7 @@ fun keyboard(body: KeyboardBuilder.() -> Unit): TelegramReplyKeyboardMarkup {
     return KeyboardBuilder().build(body)
 }
 
-fun inlineKeyboard(body: InlineKeyboardBuilder.() -> Unit) : TelegramInlineKeyboardMarkup {
+fun inlineKeyboard(body: InlineKeyboardBuilder.() -> Unit): TelegramInlineKeyboardMarkup {
     return InlineKeyboardBuilder().build(body)
 }
 

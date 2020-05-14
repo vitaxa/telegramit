@@ -3,11 +3,9 @@ package org.botlaxy.telegramit.core.conversation
 import mu.KotlinLogging
 import org.botlaxy.telegramit.core.client.api.TelegramApi
 import org.botlaxy.telegramit.core.client.model.*
-import org.botlaxy.telegramit.core.extension.emojize
 import org.botlaxy.telegramit.core.handler.HandlerCommand
 import org.botlaxy.telegramit.core.handler.HandlerNotFound
 import org.botlaxy.telegramit.core.handler.dsl.Handler
-import org.botlaxy.telegramit.core.request.TextMessage
 import java.util.*
 import java.util.concurrent.atomic.AtomicReference
 
