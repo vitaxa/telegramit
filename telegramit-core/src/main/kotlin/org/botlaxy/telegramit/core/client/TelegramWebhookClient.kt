@@ -26,7 +26,7 @@ class TelegramWebhookClient(
     clientConfig: Bot.TelegramWebhookClientConfig
 ) : TelegramClient {
 
-    private val path: String = "/hooker/${URLEncoder.encode(botToken, java.nio.charset.StandardCharsets.UTF_8)}"
+    private val path: String = "/hooker/${URLEncoder.encode(botToken, java.nio.charset.StandardCharsets.UTF_8.name())}"
 
     private val host: String = clientConfig.host ?: DEFAULT_HOST
 
