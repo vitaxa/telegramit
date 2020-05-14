@@ -1,11 +1,8 @@
 package org.botlaxy.telegramit.core.client.model
 
-import com.fasterxml.jackson.annotation.JsonProperty
-
 open class TelegramPhotoRequest(
     chatId: Long,
-    @get:JsonProperty("photo")
-    val photo: ByteArray,
+    val photo: PhotoRequest,
     replyKeyboard: TelegramReplyKeyboard? = null,
     disableNotification: Boolean = false,
     caption: String? = null,

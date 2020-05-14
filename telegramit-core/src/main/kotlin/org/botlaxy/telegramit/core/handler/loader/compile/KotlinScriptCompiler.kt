@@ -4,9 +4,6 @@ import mu.KotlinLogging
 import org.botlaxy.telegramit.core.extension.getFileSystem
 import org.botlaxy.telegramit.core.handler.dsl.Handler
 import org.jetbrains.kotlin.script.jsr223.KotlinJsr223JvmLocalScriptEngineFactory
-import java.io.File
-import java.io.InputStream
-import java.lang.IllegalArgumentException
 import java.nio.file.FileSystem
 import java.nio.file.Files
 import java.nio.file.Path
