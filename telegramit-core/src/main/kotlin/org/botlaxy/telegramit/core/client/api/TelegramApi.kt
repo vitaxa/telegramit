@@ -7,20 +7,20 @@ import io.ktor.client.HttpClient
 import io.ktor.client.request.forms.FormBuilder
 import io.ktor.client.request.forms.MultiPartFormDataContent
 import io.ktor.client.request.forms.formData
+import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.url
 import io.ktor.http.ContentType
 import io.ktor.http.Headers
 import io.ktor.http.HttpHeaders
 import io.ktor.http.contentType
+import io.ktor.util.url
 import io.ktor.utils.io.core.buildPacket
 import io.ktor.utils.io.core.writeFully
-import io.ktor.utils.io.streams.asInput
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import org.botlaxy.telegramit.core.client.TelegramApiException
 import org.botlaxy.telegramit.core.client.model.*
-import java.io.ByteArrayInputStream
 import kotlin.collections.set
 
 private val logger = KotlinLogging.logger {}
@@ -31,6 +31,12 @@ class TelegramApi(private val httpClient: HttpClient, accessKey: String) {
         .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 
     val rootUrl: String = "https://api.telegram.org/bot$accessKey"
+
+    fun getMe(): TelegramUser = runBlocking {
+        val telegramResponse = httpClient.get<TelegramResponse<TelegramUser>> { url("${rootUrl}/getMe") }
+
+        processTelegramResponse(telegramResponse)
+    }
 
     fun getUpdates(offset: Long?, limit: Int? = null, timeout: Int? = null): List<TelegramUpdate> = runBlocking {
         val params = hashMapOf<String, Any>()
@@ -200,11 +206,303 @@ class TelegramApi(private val httpClient: HttpClient, accessKey: String) {
         processTelegramResponse(telegramResponse)
     }
 
+    fun sendAnimation(animationRequest: TelegramAnimationRequest): TelegramMessage = runBlocking {
+        val formDataContent = createMediaFormData(animationRequest) {
+            formData {
+                appendInput(
+                    key = "animation",
+                    headers = Headers.build {
+                        append(
+                            HttpHeaders.ContentDisposition,
+                            "filename=${animationRequest.animation.filename}"
+                        )
+                    },
+                    size = animationRequest.animation.data.size.toLong()
+                ) { buildPacket { writeFully(animationRequest.animation.data) } }
+                animationRequest.duration?.let { append("duration", it.toString()) }
+                animationRequest.height?.let { append("height", it.toString()) }
+                animationRequest.width?.let { append("width", it.toString()) }
+            }
+        }
+
+        val telegramResponse = httpClient.post<TelegramResponse<TelegramMessage>>() {
+            headers.append("Content-Type", MULTIPART_CONTENT_TYPE);
+            url("${rootUrl}/sendAnimation")
+            body = formDataContent
+        }
+
+        processTelegramResponse(telegramResponse)
+    }
+
+    fun sendVenue(venueRequest: TelegramVenueRequest): TelegramMessage = runBlocking {
+        val telegramResponse = httpClient.post<TelegramResponse<TelegramMessage>>() {
+            contentType(ContentType.Application.Json)
+            url("${rootUrl}/sendVenue")
+            body = venueRequest
+        }
+
+        processTelegramResponse(telegramResponse)
+    }
+
+    fun sendContact(contactRequest: TelegramContactRequest): TelegramMessage = runBlocking {
+        val telegramResponse = httpClient.post<TelegramResponse<TelegramMessage>>() {
+            contentType(ContentType.Application.Json)
+            url("${rootUrl}/sendContact")
+            body = contactRequest
+        }
+
+        processTelegramResponse(telegramResponse)
+    }
+
+    fun sendPoll(pollRequest: TelegramPollRequest): TelegramMessage = runBlocking {
+        val telegramResponse = httpClient.post<TelegramResponse<TelegramMessage>>() {
+            contentType(ContentType.Application.Json)
+            url("${rootUrl}/sendPoll")
+            body = pollRequest
+        }
+
+        processTelegramResponse(telegramResponse)
+    }
+
+    fun sendDice(diceRequest: TelegramDiceRequest): TelegramMessage = runBlocking {
+        val telegramResponse = httpClient.post<TelegramResponse<TelegramMessage>>() {
+            contentType(ContentType.Application.Json)
+            url("${rootUrl}/sendDice")
+            body = diceRequest
+        }
+
+        processTelegramResponse(telegramResponse)
+    }
+
+    fun kickChatMember(kickChatMemberRequest: TelegramKickChatMemberRequest): Boolean = runBlocking {
+        val telegramResponse = httpClient.post<TelegramResponse<Boolean>>() {
+            contentType(ContentType.Application.Json)
+            url("${rootUrl}/kickChatMember")
+            body = kickChatMemberRequest
+        }
+
+        processTelegramResponse(telegramResponse)
+    }
+
+    fun unbanChatMember(unbanChatMemberRequest: TelegramUnbanChatMemberRequest): Boolean = runBlocking {
+        val telegramResponse = httpClient.post<TelegramResponse<Boolean>>() {
+            contentType(ContentType.Application.Json)
+            url("${rootUrl}/unbanChatMember")
+            body = unbanChatMemberRequest
+        }
+
+        processTelegramResponse(telegramResponse)
+    }
+
+    fun restrictChatMember(restrictChatMemberRequest: TelegramRestrictChatMemberRequest): Boolean = runBlocking {
+        val telegramResponse = httpClient.post<TelegramResponse<Boolean>>() {
+            contentType(ContentType.Application.Json)
+            url("${rootUrl}/restrictChatMember")
+            body = restrictChatMemberRequest
+        }
+
+        processTelegramResponse(telegramResponse)
+    }
+
+    fun promoteChatMemberRequest(promoteChatMemberRequest: TelegramPromoteChatMemberRequest): Boolean = runBlocking {
+        val telegramResponse = httpClient.post<TelegramResponse<Boolean>>() {
+            contentType(ContentType.Application.Json)
+            url("${rootUrl}/promoteChatMember")
+            body = promoteChatMemberRequest
+        }
+
+        processTelegramResponse(telegramResponse)
+    }
+
+    fun setChatAdministratorCustomTitle(chatAdminCustomTitleRequest: TelegramChatAdminCustomTitleRequest): Boolean =
+        runBlocking {
+            val response = httpClient.post<TelegramResponse<Boolean>>() {
+                contentType(ContentType.Application.Json)
+                url("${rootUrl}/setChatAdministratorCustomTitle")
+                body = chatAdminCustomTitleRequest
+            }
+
+            processTelegramResponse(response)
+        }
+
+    fun setChatPermissions(chatPermissionRequest: TelegramChatPermissionRequest): Boolean = runBlocking {
+        val response = httpClient.post<TelegramResponse<Boolean>>() {
+            contentType(ContentType.Application.Json)
+            url("${rootUrl}/setChatPermissions")
+            body = chatPermissionRequest
+        }
+
+        processTelegramResponse(response)
+    }
+
+    fun exportChatInviteLink(chatId: Long): Boolean = runBlocking {
+        val param = mapOf("chat_id" to chatId)
+        val response = httpClient.post<TelegramResponse<Boolean>>() {
+            contentType(ContentType.Application.Json)
+            url("${rootUrl}/exportChatInviteLink")
+            body = param
+        }
+
+        processTelegramResponse(response)
+    }
+
+    fun setChatPhoto(chatId: Long, photo: ByteArray): Boolean = runBlocking {
+        val formDataContent = MultiPartFormDataContent(
+            formData {
+                append("chat_id", chatId.toString())
+                appendInput(
+                    key = "photo",
+                    size = photo.size.toLong()
+                ) { buildPacket { writeFully(photo) } }
+            }
+        )
+        val telegramResponse = httpClient.post<TelegramResponse<Boolean>>() {
+            headers.append("Content-Type", MULTIPART_CONTENT_TYPE);
+            url("${rootUrl}/setChatPhoto")
+            body = formDataContent
+        }
+
+        processTelegramResponse(telegramResponse)
+    }
+
+    fun deleteChatPhoto(chatId: Long): Boolean = runBlocking {
+        val param = mapOf("chat_id" to chatId)
+        val telegramResponse = httpClient.post<TelegramResponse<Boolean>>() {
+            contentType(ContentType.Application.Json)
+            url("${rootUrl}/deleteChatPhoto")
+            body = param
+        }
+
+        processTelegramResponse(telegramResponse)
+    }
+
+    fun setChatTitle(chatId: Long, title: String): Boolean = runBlocking {
+        val param = mapOf("chat_id" to chatId, "title" to title)
+        val telegramResponse = httpClient.post<TelegramResponse<Boolean>>() {
+            contentType(ContentType.Application.Json)
+            url("${rootUrl}/setChatTitle")
+            body = param
+        }
+
+        processTelegramResponse(telegramResponse)
+    }
+
+    fun setChatDescription(chatId: Long, description: String): Boolean = runBlocking {
+        val param = mapOf("chat_id" to chatId, "description" to description)
+        val telegramResponse = httpClient.post<TelegramResponse<Boolean>>() {
+            contentType(ContentType.Application.Json)
+            url("${rootUrl}/setChatDescription")
+            body = param
+        }
+
+        processTelegramResponse(telegramResponse)
+    }
+
+    fun pinChatMessage(chatId: Long, messageId: Int, disableNotification: Boolean = false): Boolean = runBlocking {
+        val param = mapOf(
+            "chat_id" to chatId,
+            "message_id" to messageId,
+            "disable_notification" to disableNotification
+        )
+        val telegramResponse = httpClient.post<TelegramResponse<Boolean>>() {
+            contentType(ContentType.Application.Json)
+            url("${rootUrl}/pinChatMessage")
+            body = param
+        }
+
+        processTelegramResponse(telegramResponse)
+    }
+
+    fun unpinChatMessage(chatId: Long): Boolean = runBlocking {
+        val param = mapOf("chat_id" to chatId)
+        val telegramResponse = httpClient.post<TelegramResponse<Boolean>>() {
+            contentType(ContentType.Application.Json)
+            url("${rootUrl}/unpinChatMessage")
+            body = param
+        }
+
+        processTelegramResponse(telegramResponse)
+    }
+
+    fun leaveChat(chatId: Long): Boolean = runBlocking {
+        val param = mapOf("chat_id" to chatId)
+        val telegramResponse = httpClient.post<TelegramResponse<Boolean>>() {
+            contentType(ContentType.Application.Json)
+            url("${rootUrl}/leaveChat")
+            body = param
+        }
+
+        processTelegramResponse(telegramResponse)
+    }
+
+    fun getChat(chatId: Long): TelegramChat = runBlocking {
+        val param = mapOf("chat_id" to chatId)
+        val telegramResponse = httpClient.post<TelegramResponse<TelegramChat>>() {
+            contentType(ContentType.Application.Json)
+            url("${rootUrl}/getChat")
+            body = param
+        }
+
+        processTelegramResponse(telegramResponse)
+    }
+
+    fun getChatAdministrators(chatId: Long): List<TelegramChatMember> = runBlocking {
+        val param = mapOf("chat_id" to chatId)
+        val telegramResponse = httpClient.post<TelegramResponse<List<TelegramChatMember>>>() {
+            contentType(ContentType.Application.Json)
+            url("${rootUrl}/getChatAdministrators")
+            body = param
+        }
+
+        processTelegramResponse(telegramResponse)
+    }
+
+    fun getChatMembersCount(chatId: Long): Int = runBlocking {
+        val param = mapOf("chat_id" to chatId)
+        val telegramResponse = httpClient.post<TelegramResponse<Int>>() {
+            contentType(ContentType.Application.Json)
+            url("${rootUrl}/getChatMembersCount")
+            body = param
+        }
+
+        processTelegramResponse(telegramResponse)
+    }
+
+    fun getChatMember(chatId: Long, userId: Int): TelegramChatMember = runBlocking {
+        val param = mapOf("chat_id" to chatId, "user_id" to userId)
+        val telegramResponse = httpClient.post<TelegramResponse<TelegramChatMember>>() {
+            contentType(ContentType.Application.Json)
+            url("${rootUrl}/getChatMember")
+            body = param
+        }
+
+        processTelegramResponse(telegramResponse)
+    }
+
+    fun setMyCommands(commands: List<TelegramBotCommand>): Boolean = runBlocking {
+        val param = mapOf("commands" to commands)
+        val telegramResponse = httpClient.post<TelegramResponse<Boolean>>() {
+            contentType(ContentType.Application.Json)
+            url("${rootUrl}/setMyCommands")
+            body = param
+        }
+
+        processTelegramResponse(telegramResponse)
+    }
+
+    fun getMyCommands(): List<TelegramBotCommand> = runBlocking {
+        val telegramResponse = httpClient.get<TelegramResponse<List<TelegramBotCommand>>> {
+            url("${rootUrl}/getMyCommands")
+        }
+
+        processTelegramResponse(telegramResponse)
+    }
+
     fun getFile(fileId: String): TelegramFile = runBlocking {
         val param = mapOf("file_id" to fileId)
         val telegramResponse = httpClient.post<TelegramResponse<TelegramFile>>() {
             contentType(ContentType.Application.Json)
-            url("${rootUrl}/getFile")
+            url("${rootUrl}/sendDice")
             body = param
         }
 
