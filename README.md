@@ -26,14 +26,14 @@ repositories {
 
 Gradle:
 
-`implementation("org.botlaxy:telegramit-core:0.0.22")`
+`implementation("org.botlaxy:telegramit-core:0.0.30")`
 
 Maven:
 ```
 <dependency>
     <groupId>org.botlaxy</groupId>
     <artifactId>telegramit-core</artifactId>
-    <version>0.0.22</version>
+    <version>0.0.30</version>
 </dependency>
 ```
 
@@ -101,8 +101,6 @@ client {
 ```
 
 ## TODO:
-- Full support of the Telegram API
-
 - Inline mode
 
 - Improve the `Webhook` client

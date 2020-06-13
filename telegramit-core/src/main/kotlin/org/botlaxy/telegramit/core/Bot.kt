@@ -49,15 +49,18 @@ class Bot private constructor(
 
     private var telegramClient: TelegramClient? = null
 
-    private var telegramHttpClient: HttpClient? = null;
+    private var telegramHttpClient: HttpClient? = null
 
     private var conversationManager: ConversationManager? = null
 
     private var handlerScriptManager: HandlerScriptManager? = null
 
+    var telegramApi: TelegramApi? = null
+        private set
+
     fun start() {
         telegramHttpClient = buildHttpClient(proxyConfig)
-        val telegramApi = TelegramApi(telegramHttpClient!!, token)
+        telegramApi = TelegramApi(telegramHttpClient!!, token)
 
         val handlerHotReload = handlerScriptConfig?.handlerHotReload ?: false
         val handlerScriptPath = handlerScriptConfig?.handlerScriptPath
@@ -79,7 +82,7 @@ class Bot private constructor(
             }
         val handlers: List<Handler> = handlerScriptManager!!.compileHandlerFiles()
         conversationManager = ConversationManager(
-            telegramApi,
+            telegramApi!!,
             handlers,
             conversationPersistenceConfig?.conversationPersistence
         )
@@ -88,11 +91,11 @@ class Bot private constructor(
             *customUpdateFilters.toTypedArray(),
             CancelUpdateFilter(conversationManager!!),
             HandlerUpdateFilter(conversationManager!!),
-            UnknownUpdateFilter(telegramApi, conversationManager!!)
+            UnknownUpdateFilter(telegramApi!!, conversationManager!!)
         )
         val updListener = updateListener ?: FilterUpdateListener(filters)
 
-        telegramClient = resolveTelegramClient(telegramApi, updListener, telegramClientConfig)
+        telegramClient = resolveTelegramClient(telegramApi!!, updListener, telegramClientConfig)
         telegramClient?.start()
         logger.info { "Bot '$name' successfully started" }
     }
