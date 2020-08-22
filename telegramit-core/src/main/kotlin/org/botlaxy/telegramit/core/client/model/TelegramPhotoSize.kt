@@ -2,7 +2,7 @@ package org.botlaxy.telegramit.core.client.model
 
 import com.fasterxml.jackson.annotation.JsonProperty
 
-class TelegramPhotoSize(
+data class TelegramPhotoSize(
 
     @JsonProperty("file_id")
     val fileId: String,

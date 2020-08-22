@@ -7,7 +7,7 @@ import io.mockk.mockk
 import io.mockk.verify
 import org.botlaxy.telegramit.core.client.api.TelegramApi
 import org.botlaxy.telegramit.core.conversation.persistence.ConversationPersistence
-import org.botlaxy.telegramit.core.handler.dsl.Handler
+import org.botlaxy.telegramit.core.handler.dsl.ConversationHandler
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
@@ -23,7 +23,7 @@ class ConversationManagerTest {
         MockKAnnotations.init(this)
     }
 
-    private val handlerMock: Handler = mockk<Handler>() {
+    private val handlerMock: ConversationHandler = mockk<ConversationHandler>() {
         every { commands } returns listOf(
             mockk() {
                 every { command } returns "/start"

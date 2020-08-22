@@ -1,6 +1,6 @@
 ![Telegramit](doc/telegramit-logo.png)
 
-Telegramit is an attempt at creating a covenient framework that includes key functionality for developing Telegram chat bots.
+Telegramit is an attempt at creating a convenient framework that includes key functionality for developing Telegram chat bots.
 
 Notice! Please leave an issue if some important feature is missing in the current realisation: I will add it as soon as possible.
 
@@ -26,14 +26,14 @@ repositories {
 
 Gradle:
 
-`implementation("org.botlaxy:telegramit-core:0.0.30")`
+`implementation("org.botlaxy:telegramit-core:0.1.14")`
 
 Maven:
 ```
 <dependency>
     <groupId>org.botlaxy</groupId>
     <artifactId>telegramit-core</artifactId>
-    <version>0.0.30</version>
+    <version>0.1.14</version>
 </dependency>
 ```
 
@@ -86,7 +86,7 @@ The `Polling` method is used by default for interacting with the Telegram API. U
 ```Kotlin
 client { 
     type = TelegramClientType.WEBHOOK
-    host = "botlaxy.org"
+    host = "your_host"
     port = 9000
 }
 ```
@@ -100,10 +100,23 @@ client {
 }
 ```
 
-## TODO:
-- Inline mode
+#### How to handle user message:
+To process message create a `kts` file in the `resources` directory with `handler` function
 
-- Improve the `Webhook` client
+More about using [handler](/telegramit-sample/README.md)
+
+#### Inline mode:
+To use inline mode, you need to specify the command `/setinline` using [BotFather](https://tele.gs/botfather) select the bot for which this mode will be activated
+
+After activating inline mode, you can start processing messages of this type, for this purpose create a new `kts` file in the `resources` directory with `inlineHandler` function
+
+> inlineHandler only one can exist
+
+More about using [inlineHandler](/telegramit-sample/README.md)
+
+> The directory for kts files can be changed via `handlerScriptConfig`
+
+## TODO:
 
 - Full test coverage
 

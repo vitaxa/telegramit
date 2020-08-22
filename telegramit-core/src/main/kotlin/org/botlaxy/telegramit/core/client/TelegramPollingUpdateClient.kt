@@ -9,11 +9,11 @@ import java.util.concurrent.atomic.AtomicReference
 
 private val logger = KotlinLogging.logger {}
 
-class TelegramPollingClient(
+class TelegramPollingUpdateClient(
     private val telegramApi: TelegramApi,
     private val updateListener: UpdateListener,
     val config: Bot.TelegramPoolingClientConfig
-) : TelegramClient {
+) : TelegramUpdateClient {
 
     private val timeout = config.timeoutInSec ?: DEFAULT_POOLING_TIMEOUT
 

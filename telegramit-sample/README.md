@@ -66,3 +66,44 @@ At the end of the **process block** we are answering (not necessarily) to user w
 I’ll show it on the scheme, so you could understand the common flow of the conversation:
 
 ![Telegramit-Handler-Schema](../doc/telegramit-schema.png)
+
+### Inline mode
+
+To illustrate the work inline mode, let's try to create a bot that will give us the latest news.
+
+Let's start by writing a function:
+```Kotlin
+inlineHandler {
+}
+```
+InlineHandler we will process incoming requests from the user. We will use the `answer` function to reply to the request.
+```Kotlin
+answer {
+    result { inlineQuery: InlineHandlerQuery ->
+        listOf(InlineQueryResultArticle("your_result_id", "your_title", InputTextMessageContent("your_content")))
+    }
+}
+```
+
+In `result` you can return the following types of answers:
+* InlineQueryResultArticle
+* InlineQueryResultAudio
+* InlineQueryResultContact
+* InlineQueryResultGame
+* InlineQueryResultDocument
+* InlineQueryResultGif
+* InlineQueryResultLocation
+* InlineQueryResultMpeg4Gif
+* InlineQueryResultPhoto
+* InlineQueryResultVenue
+* InlineQueryResultVideo
+* InlineQueryResultVoice
+
+> For more details on each of them, see the documentation [Telegram documentation](https://core.telegram.org/bots/api#inlinequeryresult)
+
+If we want to get information about the selected `result` we will use the function:
+```Kotlin
+chosen { choseQuery: ChosenInlineQuery ->
+}
+```
+> For the 'chosen' block to work it is necessary to activate `/setinlinefeedback`. Learn more in [Telegram documentation](https://core.telegram.org/bots/inline#collecting-feedback)

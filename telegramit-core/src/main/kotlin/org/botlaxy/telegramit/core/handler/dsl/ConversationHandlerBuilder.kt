@@ -5,15 +5,15 @@ import org.botlaxy.telegramit.core.handler.DefaultCommandParser
 import org.botlaxy.telegramit.core.handler.HandlerException
 
 @DslMarker
-annotation class HandlerDsl
+annotation class ConversationHandlerDsl
 
-fun handler(vararg commands: String, body: HandlerBuilder.() -> Unit): Handler {
-    val handlerBuilder = HandlerBuilder(commands.asList())
+fun handler(vararg commands: String, body: ConversationHandlerBuilder.() -> Unit): ConversationHandler {
+    val handlerBuilder = ConversationHandlerBuilder(commands.asList())
     return handlerBuilder.build(body)
 }
 
-@HandlerDsl
-class HandlerBuilder(private val commands: List<String>) {
+@ConversationHandlerDsl
+class ConversationHandlerBuilder(private val commands: List<String>) {
 
     private val stepBuilders: MutableList<StepBuilder<*>> = arrayListOf()
     private var process: ProcessBlock? = null
@@ -30,7 +30,7 @@ class HandlerBuilder(private val commands: List<String>) {
         this.process = processor
     }
 
-    internal fun build(body: HandlerBuilder.() -> Unit): Handler {
+    internal fun build(body: ConversationHandlerBuilder.() -> Unit): ConversationHandler {
         body()
         val steps = arrayListOf<Step<*>>()
         for ((index, stepBuilder) in stepBuilders.withIndex()) {
@@ -46,7 +46,7 @@ class HandlerBuilder(private val commands: List<String>) {
         }
         val handlerCommands = commands.map { cmd -> commandParser.parse(cmd) }
 
-        return Handler(
+        return ConversationHandler(
             handlerCommands,
             steps.associateBy { it.key },
             process ?: throw HandlerException("Process block must not be null")
@@ -55,7 +55,7 @@ class HandlerBuilder(private val commands: List<String>) {
 
 }
 
-@HandlerDsl
+@ConversationHandlerDsl
 class StepBuilder<T : Any>(val key: String) {
 
     private var entry: EntryBlock? = null

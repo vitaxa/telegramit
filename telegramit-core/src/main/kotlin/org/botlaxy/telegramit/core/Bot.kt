@@ -1,33 +1,33 @@
 package org.botlaxy.telegramit.core
 
+import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.DeserializationFeature
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.ProxyBuilder
-import io.ktor.client.engine.okhttp.OkHttp
-import io.ktor.client.features.json.JacksonSerializer
-import io.ktor.client.features.json.JsonFeature
-import io.ktor.client.features.logging.DEFAULT
-import io.ktor.client.features.logging.LogLevel
-import io.ktor.client.features.logging.Logger
-import io.ktor.client.features.logging.Logging
-import io.ktor.http.Url
+import io.ktor.client.*
+import io.ktor.client.engine.*
+import io.ktor.client.engine.okhttp.*
+import io.ktor.client.features.json.*
+import io.ktor.client.features.logging.*
+import io.ktor.http.*
 import mu.KotlinLogging
 import okhttp3.*
 import org.botlaxy.telegramit.core.client.*
 import org.botlaxy.telegramit.core.client.api.TelegramApi
 import org.botlaxy.telegramit.core.conversation.ConversationManager
 import org.botlaxy.telegramit.core.conversation.persistence.ConversationPersistence
+import org.botlaxy.telegramit.core.handler.dsl.ConversationHandler
 import org.botlaxy.telegramit.core.handler.dsl.Handler
-import org.botlaxy.telegramit.core.handler.filter.CancelUpdateFilter
-import org.botlaxy.telegramit.core.handler.filter.HandlerUpdateFilter
-import org.botlaxy.telegramit.core.handler.filter.TelegramUpdateFilter
-import org.botlaxy.telegramit.core.handler.filter.UnknownUpdateFilter
+import org.botlaxy.telegramit.core.handler.dsl.HandlerType
+import org.botlaxy.telegramit.core.handler.dsl.InlineHandler
+import org.botlaxy.telegramit.core.handler.filter.*
 import org.botlaxy.telegramit.core.handler.loader.HandlerScriptManager
 import org.botlaxy.telegramit.core.handler.loader.compile.KotlinScriptCompiler
 import org.botlaxy.telegramit.core.listener.FilterUpdateListener
+import java.io.File
 import java.net.PasswordAuthentication
 import java.net.Proxy
+import java.security.KeyStore
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 
 private val logger = KotlinLogging.logger {}
 
@@ -47,7 +47,9 @@ class Bot private constructor(
     val handlerScriptConfig: HandlerScriptConfig?
 ) {
 
-    private var telegramClient: TelegramClient? = null
+    private val running = AtomicBoolean()
+
+    private var telegramUpdateClient: TelegramUpdateClient? = null
 
     private var telegramHttpClient: HttpClient? = null
 
@@ -59,69 +61,82 @@ class Bot private constructor(
         private set
 
     fun start() {
+        if (running.getAndSet(true)) {
+            throw IllegalStateException("Bot '$name' already started")
+        }
         telegramHttpClient = buildHttpClient(proxyConfig)
         telegramApi = TelegramApi(telegramHttpClient!!, token)
 
         val handlerHotReload = handlerScriptConfig?.handlerHotReload ?: false
         val handlerScriptPath = handlerScriptConfig?.handlerScriptPath
-        handlerScriptManager =
-            HandlerScriptManager(
-                KotlinScriptCompiler(),
-                handlerScriptPath,
-                handlerHotReload
-            ) { oldHandler, newHandler ->
-                logger.debug { "Handler was changed. From $oldHandler to $newHandler" }
-                val clearConversation: Boolean = conversationPersistenceConfig?.clearOnHandlerChange ?: true
-                if (clearConversation) {
-                    conversationManager?.clearAllConversation()
-                }
-                if (oldHandler != null) {
-                    conversationManager?.removeHandler(oldHandler)
-                }
-                conversationManager?.addHandler(newHandler)
-            }
+        handlerScriptManager = newHandlerScriptManager(handlerScriptPath, handlerHotReload)
         val handlers: List<Handler> = handlerScriptManager!!.compileHandlerFiles()
+        val conversationHandler = handlers
+            .filter { handler -> handler.type() == HandlerType.CONVERSATION }
+            .map { handler -> handler as ConversationHandler }
+        val inlineHandler = handlers
+            .find { handler -> handler.type() == HandlerType.INLINE } as InlineHandler
         conversationManager = ConversationManager(
             telegramApi!!,
-            handlers,
+            conversationHandler,
             conversationPersistenceConfig?.conversationPersistence
         )
         val customUpdateFilters = updateFilters ?: emptyList()
         val filters = arrayOf(
             *customUpdateFilters.toTypedArray(),
+            InlineUpdateFilter(inlineHandler, telegramApi!!),
             CancelUpdateFilter(conversationManager!!),
             HandlerUpdateFilter(conversationManager!!),
-            UnknownUpdateFilter(telegramApi!!, conversationManager!!)
+            UnknownUpdateFilter(telegramApi!!)
         )
         val updListener = updateListener ?: FilterUpdateListener(filters)
 
-        telegramClient = resolveTelegramClient(telegramApi!!, updListener, telegramClientConfig)
-        telegramClient?.start()
+        telegramUpdateClient = resolveTelegramClient(telegramApi!!, updListener, telegramClientConfig)
+        telegramUpdateClient?.start()
         logger.info { "Bot '$name' successfully started" }
     }
 
     fun stop() {
-        telegramClient?.close()
+        if (!running.getAndSet(false)) {
+            throw IllegalStateException("Bot '$name' has not been started")
+        }
+        telegramUpdateClient?.close()
         telegramHttpClient?.close()
         handlerScriptManager?.closeWatchHandler()
         logger.info { "Bot '$name' successfully stopped" }
+    }
+
+    private fun newHandlerScriptManager(scriptPath: String?, hotReload: Boolean): HandlerScriptManager {
+        return HandlerScriptManager(KotlinScriptCompiler(), scriptPath, hotReload) { oldHandler, newHandler ->
+            logger.debug { "Handler was changed. From $oldHandler to $newHandler" }
+            if (newHandler.type() == HandlerType.CONVERSATION) {
+                val clearConversation: Boolean = conversationPersistenceConfig?.clearOnHandlerChange ?: true
+                if (clearConversation) {
+                    conversationManager?.clearAllConversation()
+                }
+                if (oldHandler != null) {
+                    conversationManager?.removeHandler(oldHandler as ConversationHandler)
+                }
+                conversationManager?.addHandler(newHandler as ConversationHandler)
+            }
+        }
     }
 
     private fun resolveTelegramClient(
         telegramApi: TelegramApi,
         updateListener: UpdateListener,
         telegramClientConfig: TelegramClientConfig
-    ): TelegramClient {
+    ): TelegramUpdateClient {
         return when (telegramClientConfig.telegramClientType) {
             TelegramClientType.POLLING -> {
-                TelegramPollingClient(
+                TelegramPollingUpdateClient(
                     telegramApi,
                     updateListener,
                     telegramClientConfig as TelegramPoolingClientConfig
                 )
             }
             TelegramClientType.WEBHOOK -> {
-                TelegramWebhookClient(
+                TelegramWebhookUpdateClient(
                     telegramApi,
                     updateListener,
                     token,
@@ -136,6 +151,7 @@ class Bot private constructor(
             install(JsonFeature) {
                 serializer = JacksonSerializer() {
                     configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                    setSerializationInclusion(JsonInclude.Include.NON_NULL)
                 }
             }
             if (logger.isDebugEnabled) {
@@ -171,7 +187,7 @@ class Bot private constructor(
                                         override fun authenticate(route: Route?, response: Response): Request? {
                                             val credential: String =
                                                 Credentials.basic(proxyConfig.login, proxyConfig.password)
-                                            return response.request().newBuilder()
+                                            return response.request.newBuilder()
                                                 .header("Proxy-Authorization", credential)
                                                 .build()
                                         }
@@ -331,6 +347,12 @@ class Bot private constructor(
         var port: Int? = null
         var timeout: Int? = null
         var limit: Int? = null
+        var keyStore: KeyStore? = null
+        var keyAlias: String? = null
+        var keyStorePassword: String? = null
+        var privateKeyPassword: String? = null
+        var keyStoreFile: File? = null
+        var publicKeyFile: File? = null
 
         fun build(): TelegramClientConfig {
             return when (type) {
@@ -338,7 +360,23 @@ class Bot private constructor(
                     TelegramPoolingClientConfig(type, timeout, limit)
                 }
                 TelegramClientType.WEBHOOK -> {
-                    TelegramWebhookClientConfig(type, host, port)
+                    if (keyStore == null) throw IllegalStateException("'keyStore' can't be null")
+                    if (keyAlias == null) throw IllegalStateException("'keyAlias' can't be null")
+                    if (keyStorePassword == null) throw IllegalStateException("'keyStorePassword' can't be null")
+                    if (privateKeyPassword == null) throw IllegalStateException("'privateKeyPassword' can't be null")
+                    if (keyStoreFile == null) throw IllegalStateException("'keyStoreFile' can't be null")
+                    if (publicKeyFile == null) throw IllegalStateException("'publicKeyFile' can't be null")
+                    TelegramWebhookClientConfig(
+                        type,
+                        host,
+                        port,
+                        keyStore!!,
+                        keyAlias!!,
+                        keyStorePassword!!,
+                        privateKeyPassword!!,
+                        keyStoreFile!!,
+                        publicKeyFile!!
+                    )
                 }
             }
         }
@@ -353,7 +391,13 @@ class Bot private constructor(
     class TelegramWebhookClientConfig(
         telegramClientType: TelegramClientType,
         val host: String?,
-        val port: Int?
+        val port: Int?,
+        val keyStore: KeyStore,
+        val keyAlias: String,
+        val keyStorePassword: String,
+        val privateKeyPassword: String,
+        val keyStoreFile: File,
+        val publicKeyFile: File
     ) : TelegramClientConfig(telegramClientType)
 
     abstract class TelegramClientConfig(val telegramClientType: TelegramClientType) {

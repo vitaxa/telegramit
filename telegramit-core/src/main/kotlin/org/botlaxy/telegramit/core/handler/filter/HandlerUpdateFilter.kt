@@ -16,7 +16,7 @@ class HandlerUpdateFilter(private val conversationManager: ConversationManager) 
         filterChain: TelegramUpdateFilterChain
     ) {
         val chatId = update.getChatId()
-        logger.trace { "Execute 'HandlerFilter' '${chatId}'" }
+        logger.trace { "Execute 'HandlerUpdateFilter' '${chatId}'" }
         if (update.getMessage() == null) {
             filterChain.doFilter(update)
         }
