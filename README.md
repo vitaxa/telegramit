@@ -2,7 +2,7 @@
 
 Telegramit is an attempt at creating a convenient framework that includes key functionality for developing Telegram chat bots.
 
-Notice! Please leave an issue if some important feature is missing in the current realisation: I will add it as soon as possible.
+> Notice! Please leave an issue if some important feature is missing in the current realisation: I will add it as soon as possible.
 
 ## Features:
 
@@ -13,6 +13,8 @@ Notice! Please leave an issue if some important feature is missing in the curren
 - Hot reload for DSL scripts
 
 - Extremely simple configuration and deployment
+
+- Inline mode
 
 ## Setup:
 
@@ -67,7 +69,7 @@ either place your `.kts` script into the resource folder: `resources/handlers/Si
 
 or add any path in your system. This choice supports hot reaload in the production environment:
 ```Kotlin
-handlerScriptConfig { 
+handlerScriptConfig {
     handlerScriptPath = "telegramit/sample/handlers"
     handlerHotReload = true
 }
@@ -84,7 +86,7 @@ Persistence is currently used ONLY for the conversation context.
 
 The `Polling` method is used by default for interacting with the Telegram API. Use this configuration if you need to change to `Webhook`: 
 ```Kotlin
-client { 
+client {
     type = TelegramClientType.WEBHOOK
     host = "your_host"
     port = 9000
@@ -121,7 +123,7 @@ More about using [inlineHandler](/telegramit-sample/README.md)
 - Full test coverage
 
 ## Thanks to:
-Special thanks to [Telegraff](#Telegraff "https://github.com/ruslanys/telegraff") for the inspiration and some code base. In addition, pay your attention to this library, if you use **Spring**. 
+Special thanks to [Telegraff](https://github.com/ruslanys/telegraff) for the inspiration and some code base. In addition, pay your attention to this library, if you use **Spring**. 
 
 
 
