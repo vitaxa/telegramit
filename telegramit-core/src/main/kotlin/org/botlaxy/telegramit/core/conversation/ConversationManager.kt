@@ -5,7 +5,7 @@ import org.botlaxy.telegramit.core.client.api.TelegramApi
 import org.botlaxy.telegramit.core.conversation.persistence.ConversationData
 import org.botlaxy.telegramit.core.conversation.persistence.ConversationPersistence
 import org.botlaxy.telegramit.core.handler.HandlerCommand
-import org.botlaxy.telegramit.core.handler.dsl.ConversationHandler
+import org.botlaxy.telegramit.core.handler.dsl.ConversationTelegramHandler
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReference
 
@@ -13,13 +13,13 @@ private val logger = KotlinLogging.logger {}
 
 class ConversationManager(
     private val telegramApi: TelegramApi,
-    private val handlers: List<ConversationHandler>,
+    private val handlers: List<ConversationTelegramHandler>,
     private val persistence: ConversationPersistence? = null
 ) {
 
     private val conversationSessionMap: MutableMap<Long, ConversationSession> = ConcurrentHashMap()
 
-    private val handlerMap: MutableMap<HandlerCommand, ConversationHandler> = ConcurrentHashMap()
+    private val handlerMap: MutableMap<HandlerCommand, ConversationTelegramHandler> = ConcurrentHashMap()
 
     init {
         handlerMap.putAll(groupByCommand(handlers)) // Initial handlers
@@ -64,24 +64,24 @@ class ConversationManager(
         persistence?.clearConversations()
     }
 
-    fun addHandler(handler: ConversationHandler) {
+    fun addHandler(handler: ConversationTelegramHandler) {
         val newHandlerMap = groupByCommand(listOf(handler))
         handlerMap.putAll(newHandlerMap)
     }
 
-    fun removeHandler(handler: ConversationHandler) {
+    fun removeHandler(handler: ConversationTelegramHandler) {
         val newHandlerMap = groupByCommand(listOf(handler))
         for (handlerCommand in newHandlerMap.keys) {
             handlerMap.remove(handlerCommand)
         }
     }
 
-    private fun loadConversationState(chatId: Long, handlerMap: Map<HandlerCommand, ConversationHandler>): ConversationState? {
+    private fun loadConversationState(chatId: Long, handlerMap: Map<HandlerCommand, ConversationTelegramHandler>): ConversationState? {
         logger.debug { "Load '$chatId' conversation from persistence storage" }
         val conversationData = persistence?.getConversation(chatId.toString())
         if (conversationData != null) {
             var handlerCommand: HandlerCommand? = null
-            var handler: ConversationHandler? = null
+            var handler: ConversationTelegramHandler? = null
             for (entry in handlerMap) {
                 if (entry.key.command.equals(conversationData.handlerCommand, ignoreCase = true)) {
                     handlerCommand = entry.key
@@ -117,8 +117,8 @@ class ConversationManager(
         persistence?.saveConversation(chatId.toString(), conversationData)
     }
 
-    private fun groupByCommand(handlers: List<ConversationHandler>): HashMap<HandlerCommand, ConversationHandler> {
-        val handlerMap = hashMapOf<HandlerCommand, ConversationHandler>()
+    private fun groupByCommand(handlers: List<ConversationTelegramHandler>): HashMap<HandlerCommand, ConversationTelegramHandler> {
+        val handlerMap = hashMapOf<HandlerCommand, ConversationTelegramHandler>()
         for (handler in handlers) {
             for (handlerCommand in handler.commands) {
                 val prevValue = handlerMap.put(handlerCommand, handler)

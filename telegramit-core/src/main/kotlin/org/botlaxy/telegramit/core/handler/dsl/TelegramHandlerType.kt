@@ -1,5 +1,5 @@
 package org.botlaxy.telegramit.core.handler.dsl
 
-enum class HandlerType {
+enum class TelegramHandlerType {
     CONVERSATION, INLINE
 }

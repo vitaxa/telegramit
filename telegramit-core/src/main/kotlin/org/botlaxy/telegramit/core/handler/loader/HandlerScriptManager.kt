@@ -4,8 +4,7 @@ import mu.KotlinLogging
 import org.botlaxy.telegramit.core.extension.md5
 import org.botlaxy.telegramit.core.extension.watch
 import org.botlaxy.telegramit.core.handler.HandlerConstant
-import org.botlaxy.telegramit.core.handler.dsl.ConversationHandler
-import org.botlaxy.telegramit.core.handler.dsl.Handler
+import org.botlaxy.telegramit.core.handler.dsl.TelegramHandler
 import org.botlaxy.telegramit.core.handler.loader.collect.ClassPathScriptCollector
 import org.botlaxy.telegramit.core.handler.loader.collect.DirectoryScriptCollector
 import org.botlaxy.telegramit.core.handler.loader.collect.ScriptCollector
@@ -20,7 +19,7 @@ class HandlerScriptManager(
     private val handlerScriptCompiler: HandlerScriptCompiler,
     val handlerScriptDir: String?,
     val handlerHotReload: Boolean = false,
-    private val scriptChangeListener: ((oldHandler: Handler?, newHandler: Handler) -> Unit)? = null
+    private val scriptChangeListener: ((oldHandler: TelegramHandler?, newHandler: TelegramHandler) -> Unit)? = null
 ) {
 
     private val handlerScriptPath: Path = if (handlerScriptDir != null) {
@@ -42,7 +41,7 @@ class HandlerScriptManager(
 
     private var handlerWatchThread: Thread? = null
 
-    fun compileHandlerFiles(): List<Handler> {
+    fun compileHandlerFiles(): List<TelegramHandler> {
         val handlerScriptFiles: List<Path>
         try {
             handlerScriptFiles = handlerScriptCollector.collect()
@@ -109,7 +108,7 @@ class HandlerScriptManager(
         val watchService: WatchService,
         val watchKeyMap: MutableMap<WatchKey, Path>,
         val handlerFileMap: MutableMap<String, HandlerFileInfo>,
-        val fileHandlerMap: MutableMap<Path, Handler>
+        val fileHandlerMap: MutableMap<Path, TelegramHandler>
     ) : Runnable {
 
         override fun run() {

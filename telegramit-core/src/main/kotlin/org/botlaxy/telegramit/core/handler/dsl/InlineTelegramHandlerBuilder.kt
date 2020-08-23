@@ -1,18 +1,16 @@
 package org.botlaxy.telegramit.core.handler.dsl
 
-import org.botlaxy.telegramit.core.client.model.inline.InlineHandlerQuery
-import org.botlaxy.telegramit.core.handler.HandlerException
 import java.lang.IllegalStateException
 
 @DslMarker
 annotation class InlineHandlerDsl
 
-fun inlineHandler(body: InlineHandlerBuilder.() -> Unit): InlineHandler {
-    return InlineHandlerBuilder().build(body)
+fun inlineHandler(body: InlineTelegramHandlerBuilder.() -> Unit): InlineTelegramHandler {
+    return InlineTelegramHandlerBuilder().build(body)
 }
 
 @InlineHandlerDsl
-class InlineHandlerBuilder() {
+class InlineTelegramHandlerBuilder() {
 
     private var option: OptionConfig? = null
 
@@ -33,9 +31,9 @@ class InlineHandlerBuilder() {
         this.chosenResult = block
     }
 
-    internal fun build(body: InlineHandlerBuilder.() -> Unit): InlineHandler {
+    internal fun build(body: InlineTelegramHandlerBuilder.() -> Unit): InlineTelegramHandler {
         body()
-        return InlineHandler(
+        return InlineTelegramHandler(
             answers,
             option,
             chosenResult

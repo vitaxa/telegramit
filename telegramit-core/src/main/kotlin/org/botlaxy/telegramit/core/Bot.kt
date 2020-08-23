@@ -14,10 +14,10 @@ import org.botlaxy.telegramit.core.client.*
 import org.botlaxy.telegramit.core.client.api.TelegramApi
 import org.botlaxy.telegramit.core.conversation.ConversationManager
 import org.botlaxy.telegramit.core.conversation.persistence.ConversationPersistence
-import org.botlaxy.telegramit.core.handler.dsl.ConversationHandler
-import org.botlaxy.telegramit.core.handler.dsl.Handler
-import org.botlaxy.telegramit.core.handler.dsl.HandlerType
-import org.botlaxy.telegramit.core.handler.dsl.InlineHandler
+import org.botlaxy.telegramit.core.handler.dsl.ConversationTelegramHandler
+import org.botlaxy.telegramit.core.handler.dsl.TelegramHandler
+import org.botlaxy.telegramit.core.handler.dsl.TelegramHandlerType
+import org.botlaxy.telegramit.core.handler.dsl.InlineTelegramHandler
 import org.botlaxy.telegramit.core.handler.filter.*
 import org.botlaxy.telegramit.core.handler.loader.HandlerScriptManager
 import org.botlaxy.telegramit.core.handler.loader.compile.KotlinScriptCompiler
@@ -71,12 +71,12 @@ class Bot private constructor(
         val handlerHotReload = handlerScriptConfig?.handlerHotReload ?: false
         val handlerScriptPath = handlerScriptConfig?.handlerScriptPath
         handlerScriptManager = newHandlerScriptManager(handlerScriptPath, handlerHotReload)
-        val handlers: List<Handler> = handlerScriptManager!!.compileHandlerFiles()
+        val handlers: List<TelegramHandler> = handlerScriptManager!!.compileHandlerFiles()
         val conversationHandler = handlers
-            .filter { handler -> handler.type() == HandlerType.CONVERSATION }
-            .map { handler -> handler as ConversationHandler }
+            .filter { handler -> handler.type() == TelegramHandlerType.CONVERSATION }
+            .map { handler -> handler as ConversationTelegramHandler }
         val inlineHandler = handlers
-            .find { handler -> handler.type() == HandlerType.INLINE } as InlineHandler
+            .find { handler -> handler.type() == TelegramHandlerType.INLINE } as InlineTelegramHandler
         conversationManager = ConversationManager(
             telegramApi!!,
             conversationHandler,
@@ -111,15 +111,15 @@ class Bot private constructor(
     private fun newHandlerScriptManager(scriptPath: String?, hotReload: Boolean): HandlerScriptManager {
         return HandlerScriptManager(KotlinScriptCompiler(), scriptPath, hotReload) { oldHandler, newHandler ->
             logger.debug { "Handler was changed. From $oldHandler to $newHandler" }
-            if (newHandler.type() == HandlerType.CONVERSATION) {
+            if (newHandler.type() == TelegramHandlerType.CONVERSATION) {
                 val clearConversation: Boolean = conversationPersistenceConfig?.clearOnHandlerChange ?: true
                 if (clearConversation) {
                     conversationManager?.clearAllConversation()
                 }
                 if (oldHandler != null) {
-                    conversationManager?.removeHandler(oldHandler as ConversationHandler)
+                    conversationManager?.removeHandler(oldHandler as ConversationTelegramHandler)
                 }
-                conversationManager?.addHandler(newHandler as ConversationHandler)
+                conversationManager?.addHandler(newHandler as ConversationTelegramHandler)
             }
         }
     }

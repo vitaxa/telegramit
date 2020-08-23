@@ -1,13 +1,13 @@
 package org.botlaxy.telegramit.core.handler.dsl
 
-class InlineHandler(
+class InlineTelegramHandler(
     val answers: List<QueryAnswer>,
     val option: OptionConfig?,
     val processChosenResult: InlineChosenResultBlock?
-) : Handler {
+) : TelegramHandler {
 
-    override fun type(): HandlerType {
-        return HandlerType.INLINE
+    override fun type(): TelegramHandlerType {
+        return TelegramHandlerType.INLINE
     }
 
 }

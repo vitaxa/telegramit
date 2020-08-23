@@ -7,13 +7,13 @@ import org.botlaxy.telegramit.core.handler.HandlerException
 @DslMarker
 annotation class ConversationHandlerDsl
 
-fun handler(vararg commands: String, body: ConversationHandlerBuilder.() -> Unit): ConversationHandler {
-    val handlerBuilder = ConversationHandlerBuilder(commands.asList())
+fun handler(vararg commands: String, body: ConversationTelegramHandlerBuilder.() -> Unit): ConversationTelegramHandler {
+    val handlerBuilder = ConversationTelegramHandlerBuilder(commands.asList())
     return handlerBuilder.build(body)
 }
 
 @ConversationHandlerDsl
-class ConversationHandlerBuilder(private val commands: List<String>) {
+class ConversationTelegramHandlerBuilder(private val commands: List<String>) {
 
     private val stepBuilders: MutableList<StepBuilder<*>> = arrayListOf()
     private var process: ProcessBlock? = null
@@ -30,7 +30,7 @@ class ConversationHandlerBuilder(private val commands: List<String>) {
         this.process = processor
     }
 
-    internal fun build(body: ConversationHandlerBuilder.() -> Unit): ConversationHandler {
+    internal fun build(body: ConversationTelegramHandlerBuilder.() -> Unit): ConversationTelegramHandler {
         body()
         val steps = arrayListOf<Step<*>>()
         for ((index, stepBuilder) in stepBuilders.withIndex()) {
@@ -46,7 +46,7 @@ class ConversationHandlerBuilder(private val commands: List<String>) {
         }
         val handlerCommands = commands.map { cmd -> commandParser.parse(cmd) }
 
-        return ConversationHandler(
+        return ConversationTelegramHandler(
             handlerCommands,
             steps.associateBy { it.key },
             process ?: throw HandlerException("Process block must not be null")
