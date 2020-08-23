@@ -62,7 +62,8 @@ class Bot private constructor(
 
     fun start() {
         if (running.getAndSet(true)) {
-            throw IllegalStateException("Bot '$name' already started")
+            logger.warn { "Bot '$name' already started" }
+            return
         }
         telegramHttpClient = buildHttpClient(proxyConfig)
         telegramApi = TelegramApi(telegramHttpClient!!, token)
@@ -98,7 +99,8 @@ class Bot private constructor(
 
     fun stop() {
         if (!running.getAndSet(false)) {
-            throw IllegalStateException("Bot '$name' has not been started")
+            logger.warn { "Bot '$name' has not been started" }
+            return
         }
         telegramUpdateClient?.close()
         telegramHttpClient?.close()

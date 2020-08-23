@@ -110,7 +110,7 @@ To use inline mode, you need to specify the command `/setinline` using [BotFathe
 
 After activating inline mode, you can start processing messages of this type, for this purpose create a new `kts` file in the `resources` directory with `inlineHandler` function
 
-> inlineHandler only one can exist
+> only one inlineHandler can exist
 
 More about using [inlineHandler](/telegramit-sample/README.md)
 
