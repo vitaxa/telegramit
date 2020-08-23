@@ -5,7 +5,7 @@ import org.botlaxy.telegramit.core.client.api.TelegramApi
 import org.botlaxy.telegramit.core.client.model.*
 import org.botlaxy.telegramit.core.handler.HandlerCommand
 import org.botlaxy.telegramit.core.handler.HandlerNotFound
-import org.botlaxy.telegramit.core.handler.dsl.Handler
+import org.botlaxy.telegramit.core.handler.dsl.ConversationTelegramHandler
 import java.util.*
 import java.util.concurrent.atomic.AtomicReference
 
@@ -14,12 +14,12 @@ private val logger = KotlinLogging.logger {}
 class ConversationSession(
     val chatId: Long,
     private val telegramApi: TelegramApi,
-    private val handlerMap: Map<HandlerCommand, Handler>,
+    private val handlerMap: Map<HandlerCommand, ConversationTelegramHandler>,
     private var initialState: ConversationState? = null,
     private val finishCallback: (() -> Unit)? = null
 ) {
 
-    var proccessUpdateFinishListener: ((ConversationState?) -> Unit)? = null
+    var processUpdateFinishListener: ((ConversationState?) -> Unit)? = null
 
     private var conversationState: ConversationState? = initialState
 
@@ -78,7 +78,7 @@ class ConversationSession(
         if (conversationResponse != null) {
             sendTelegramRequest(chatId, conversationResponse)
         }
-        proccessUpdateFinishListener?.invoke(conversationState)
+        processUpdateFinishListener?.invoke(conversationState)
     }
 
     private fun handleEntryStepBlock(state: ConversationState, params: Map<String, String>? = null): TelegramRequest? {
@@ -153,6 +153,6 @@ class ConversationSession(
         conversationState = null
     }
 
-    private data class HandlerHolder(val handlerCommand: HandlerCommand, val handler: Handler)
+    private data class HandlerHolder(val handlerCommand: HandlerCommand, val handler: ConversationTelegramHandler)
 
 }

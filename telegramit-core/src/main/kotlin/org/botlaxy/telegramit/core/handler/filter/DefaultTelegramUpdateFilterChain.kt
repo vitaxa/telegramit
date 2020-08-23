@@ -2,7 +2,9 @@ package org.botlaxy.telegramit.core.handler.filter
 
 import org.botlaxy.telegramit.core.client.model.TelegramUpdate
 
-class DefaultTelegramUpdateFilterChain(updateFilters: List<TelegramUpdateFilter>) : TelegramUpdateFilterChain {
+class DefaultTelegramUpdateFilterChain(
+    updateFilters: List<TelegramUpdateFilter>
+) : TelegramUpdateFilterChain {
 
     private val iterator: Iterator<TelegramUpdateFilter> = updateFilters.iterator()
 

@@ -2,14 +2,14 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinPluginWrapper
 import com.jfrog.bintray.gradle.BintrayExtension
 
 plugins {
-    kotlin("jvm") version "1.3.71"
+    kotlin("jvm") version "1.4.0"
     `maven-publish`
     id("com.jfrog.bintray") version "1.8.5"
 }
 
 allprojects {
     group = "org.botlaxy"
-    version = "0.0.30"
+    version = "0.1.14"
 
     repositories {
         jcenter()
@@ -24,7 +24,7 @@ val kotlinLogVersion = "1.7.7"
 val mapDb = "3.0.8"
 val jnaVersion = "4.2.2"
 val emojiVersion = "5.1.1"
-val ktorVersion = "1.3.1"
+val ktorVersion = "1.4.0"
 val mockWebServerVersion = "4.4.0"
 
 subprojects {
@@ -35,8 +35,8 @@ subprojects {
     apply(plugin = "com.jfrog.bintray")
 
     java {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
 
     dependencies {

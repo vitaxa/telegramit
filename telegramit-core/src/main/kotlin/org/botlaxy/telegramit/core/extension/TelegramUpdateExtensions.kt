@@ -46,6 +46,10 @@ fun TelegramUpdate.getEditMessage(): TelegramMessage? {
     }
 }
 
+fun TelegramUpdate.isInlineMessage(): Boolean {
+    return inlineQuery != null || chosenInlineResult != null
+}
+
 operator fun Headers.plus(other: Headers): Headers = when {
     this.isEmpty() -> other
     other.isEmpty() -> this

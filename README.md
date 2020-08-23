@@ -1,8 +1,8 @@
 ![Telegramit](doc/telegramit-logo.png)
 
-Telegramit is an attempt at creating a covenient framework that includes key functionality for developing Telegram chat bots.
+Telegramit is an attempt at creating a convenient framework that includes key functionality for developing Telegram chat bots.
 
-Notice! Please leave an issue if some important feature is missing in the current realisation: I will add it as soon as possible.
+> Notice! Please leave an issue if some important feature is missing in the current realisation: I will add it as soon as possible.
 
 ## Features:
 
@@ -13,6 +13,8 @@ Notice! Please leave an issue if some important feature is missing in the curren
 - Hot reload for DSL scripts
 
 - Extremely simple configuration and deployment
+
+- Inline mode
 
 ## Setup:
 
@@ -26,14 +28,14 @@ repositories {
 
 Gradle:
 
-`implementation("org.botlaxy:telegramit-core:0.0.30")`
+`implementation("org.botlaxy:telegramit-core:0.1.14")`
 
 Maven:
 ```
 <dependency>
     <groupId>org.botlaxy</groupId>
     <artifactId>telegramit-core</artifactId>
-    <version>0.0.30</version>
+    <version>0.1.14</version>
 </dependency>
 ```
 
@@ -67,7 +69,7 @@ either place your `.kts` script into the resource folder: `resources/handlers/Si
 
 or add any path in your system. This choice supports hot reaload in the production environment:
 ```Kotlin
-handlerScriptConfig { 
+handlerScriptConfig {
     handlerScriptPath = "telegramit/sample/handlers"
     handlerHotReload = true
 }
@@ -84,9 +86,9 @@ Persistence is currently used ONLY for the conversation context.
 
 The `Polling` method is used by default for interacting with the Telegram API. Use this configuration if you need to change to `Webhook`: 
 ```Kotlin
-client { 
+client {
     type = TelegramClientType.WEBHOOK
-    host = "botlaxy.org"
+    host = "your_host"
     port = 9000
 }
 ```
@@ -100,15 +102,28 @@ client {
 }
 ```
 
-## TODO:
-- Inline mode
+#### How to handle user message:
+To process message create a `kts` file in the `resources` directory with `handler` function
 
-- Improve the `Webhook` client
+More about using [handler](/telegramit-sample/README.md)
+
+#### Inline mode:
+To use inline mode, you need to specify the command `/setinline` using [BotFather](https://tele.gs/botfather) select the bot for which this mode will be activated
+
+After activating inline mode, you can start processing messages of this type, for this purpose create a new `kts` file in the `resources` directory with `inlineHandler` function
+
+> only one inlineHandler can exist
+
+More about using [inlineHandler](/telegramit-sample/README.md)
+
+> The directory for kts files can be changed via `handlerScriptConfig`
+
+## TODO:
 
 - Full test coverage
 
 ## Thanks to:
-Special thanks to [Telegraff](#Telegraff "https://github.com/ruslanys/telegraff") for the inspiration and some code base. In addition, pay your attention to this library, if you use **Spring**. 
+Special thanks to [Telegraff](https://github.com/ruslanys/telegraff) for the inspiration and some code base. In addition, pay your attention to this library, if you use **Spring**. 
 
 
 

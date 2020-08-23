@@ -11,8 +11,7 @@ import org.botlaxy.telegramit.core.extension.getChatId
 private val logger = KotlinLogging.logger {}
 
 class UnknownUpdateFilter(
-    private val telegramApi: TelegramApi,
-    private val conversationManager: ConversationManager
+    private val telegramApi: TelegramApi
 ) : TelegramUpdateFilter {
 
     override fun handleUpdate(

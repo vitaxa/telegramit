@@ -4,7 +4,7 @@ import mu.KotlinLogging
 import org.botlaxy.telegramit.core.extension.md5
 import org.botlaxy.telegramit.core.extension.watch
 import org.botlaxy.telegramit.core.handler.HandlerConstant
-import org.botlaxy.telegramit.core.handler.dsl.Handler
+import org.botlaxy.telegramit.core.handler.dsl.TelegramHandler
 import org.botlaxy.telegramit.core.handler.loader.collect.ClassPathScriptCollector
 import org.botlaxy.telegramit.core.handler.loader.collect.DirectoryScriptCollector
 import org.botlaxy.telegramit.core.handler.loader.collect.ScriptCollector
@@ -19,7 +19,7 @@ class HandlerScriptManager(
     private val handlerScriptCompiler: HandlerScriptCompiler,
     val handlerScriptDir: String?,
     val handlerHotReload: Boolean = false,
-    private val scriptChangeListener: ((oldHandler: Handler?, newHandler: Handler) -> Unit)? = null
+    private val scriptChangeListener: ((oldHandler: TelegramHandler?, newHandler: TelegramHandler) -> Unit)? = null
 ) {
 
     private val handlerScriptPath: Path = if (handlerScriptDir != null) {
@@ -41,7 +41,7 @@ class HandlerScriptManager(
 
     private var handlerWatchThread: Thread? = null
 
-    fun compileHandlerFiles(): List<Handler> {
+    fun compileHandlerFiles(): List<TelegramHandler> {
         val handlerScriptFiles: List<Path>
         try {
             handlerScriptFiles = handlerScriptCollector.collect()
@@ -60,7 +60,10 @@ class HandlerScriptManager(
                     }
 
                     // Store file and handler relation
-                    val fileHandlerMap = hashMapOf<Path, Handler>()
+                    val fileHandlerMap = handlerScriptFiles.associateBy(
+                        { path: Path -> path },
+                        { path: Path -> handlerScriptCompiler.compile(path) }
+                    ).toMutableMap()
                     for (handlerScriptFile in handlerScriptFiles) {
                         fileHandlerMap[handlerScriptFile] = handlerScriptCompiler.compile(handlerScriptFile)
                     }
@@ -76,6 +79,7 @@ class HandlerScriptManager(
                         }
                     }
                     Files.walkFileTree(handlerScriptPath, simpleFileVisitor)
+
                     handlerWatchActive = true
                     handlerWatchThread =
                         Thread(
@@ -84,10 +88,11 @@ class HandlerScriptManager(
                         )
                     handlerWatchThread!!.isDaemon = true
                     handlerWatchThread!!.start()
-                }
-            }
 
-            handlerScriptFiles.map { handlerScriptCompiler.compile(it) }
+                    return fileHandlerMap.map { it.value }
+                }
+                handlerScriptFiles.map { handlerScriptCompiler.compile(it) }
+            }
         } else {
             handlerScriptFiles.map { handlerScriptCompiler.compile(it) }
         }
@@ -101,9 +106,9 @@ class HandlerScriptManager(
 
     private inner class HandlerWatch(
         val watchService: WatchService,
-        val watchKeyMap: HashMap<WatchKey, Path>,
-        val handlerFileMap: HashMap<String, HandlerFileInfo>,
-        val fileHandlerMap: HashMap<Path, Handler>
+        val watchKeyMap: MutableMap<WatchKey, Path>,
+        val handlerFileMap: MutableMap<String, HandlerFileInfo>,
+        val fileHandlerMap: MutableMap<Path, TelegramHandler>
     ) : Runnable {
 
         override fun run() {

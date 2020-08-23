@@ -1,6 +1,8 @@
 package org.botlaxy.telegramit.core.client.model
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import org.botlaxy.telegramit.core.client.model.inline.ChosenInlineQuery
+import org.botlaxy.telegramit.core.client.model.inline.InlineQuery
 
 data class TelegramUpdate(
     @JsonProperty("update_id")
@@ -16,5 +18,11 @@ data class TelegramUpdate(
     val channelPost: TelegramMessage?,
 
     @JsonProperty("edited_channel_post")
-    val editedChannelPost: TelegramMessage?
+    val editedChannelPost: TelegramMessage?,
+
+    @JsonProperty("inline_query")
+    val inlineQuery: InlineQuery?,
+
+    @JsonProperty("chosen_inline_result")
+    val chosenInlineResult: ChosenInlineQuery?
 )

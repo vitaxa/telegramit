@@ -4,12 +4,15 @@ import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.ktor.client.HttpClient
+import io.ktor.client.features.HttpResponseValidator
+import io.ktor.client.features.ServerResponseException
 import io.ktor.client.request.forms.FormBuilder
 import io.ktor.client.request.forms.MultiPartFormDataContent
 import io.ktor.client.request.forms.formData
 import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.url
+import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.Headers
 import io.ktor.http.HttpHeaders
@@ -21,19 +24,32 @@ import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import org.botlaxy.telegramit.core.client.TelegramApiException
 import org.botlaxy.telegramit.core.client.model.*
+import org.botlaxy.telegramit.core.client.model.inline.InlineQueryAnswer
+import java.io.File
 import kotlin.collections.set
 
 private val logger = KotlinLogging.logger {}
 
-class TelegramApi(private val httpClient: HttpClient, accessKey: String) {
+class TelegramApi(httpClient: HttpClient, accessKey: String) {
 
     private val jsonMapper: ObjectMapper = jacksonObjectMapper()
         .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 
     val rootUrl: String = "https://api.telegram.org/bot$accessKey"
 
+    private val client: HttpClient = httpClient.config {
+        HttpResponseValidator {
+            validateResponse { response: HttpResponse ->
+                val statusCode = response.status.value
+                when (statusCode) {
+                    in 500..599 -> throw ServerResponseException(response)
+                }
+            }
+        }
+    }
+
     fun getMe(): TelegramUser = runBlocking {
-        val telegramResponse = httpClient.get<TelegramResponse<TelegramUser>> { url("${rootUrl}/getMe") }
+        val telegramResponse = client.get<TelegramResponse<TelegramUser>> { url("${rootUrl}/getMe") }
 
         processTelegramResponse(telegramResponse)
     }
@@ -43,7 +59,7 @@ class TelegramApi(private val httpClient: HttpClient, accessKey: String) {
         offset?.let { params["offset"] = it }
         limit?.let { params["limit"] = it }
         timeout?.let { params["timeout"] = it }
-        val telegramResponse = httpClient.post<TelegramResponse<List<TelegramUpdate>>> {
+        val telegramResponse = client.post<TelegramResponse<List<TelegramUpdate>>> {
             contentType(ContentType.Application.Json)
             url("${rootUrl}/getUpdates")
             body = params
@@ -53,18 +69,37 @@ class TelegramApi(private val httpClient: HttpClient, accessKey: String) {
     }
 
     fun setWebhook(url: String): Boolean = runBlocking {
-        val params = hashMapOf("url" to url)
-        val telegramResponse = httpClient.post<TelegramResponse<Boolean>>() {
+        val reqBody = hashMapOf("url" to url)
+        val telegramResponse = client.post<TelegramResponse<Boolean>>() {
             contentType(ContentType.Application.Json)
             url("${rootUrl}/setWebhook")
-            body = params
+            body = reqBody
+        }
+
+        processTelegramResponse(telegramResponse)
+    }
+
+    fun setWebhook(url: String, certificate: File): Boolean = runBlocking {
+        val certByteArray = certificate.inputStream().readAllBytes()
+        val reqBody = MultiPartFormDataContent(
+            formData {
+                append("url", url)
+                appendInput(
+                    key = "certificate",
+                    size = certByteArray.size.toLong()
+                ) { buildPacket { writeFully(certByteArray) } }
+            }
+        )
+        val telegramResponse = client.post<TelegramResponse<Boolean>>() {
+            url("${rootUrl}/setWebhook")
+            body = reqBody
         }
 
         processTelegramResponse(telegramResponse)
     }
 
     fun sendMessage(message: TelegramChatRequest): TelegramMessage = runBlocking {
-        val telegramResponse = httpClient.post<TelegramResponse<TelegramMessage>>() {
+        val telegramResponse = client.post<TelegramResponse<TelegramMessage>>() {
             contentType(ContentType.Application.Json)
             url("${rootUrl}/sendMessage")
             body = message
@@ -74,7 +109,7 @@ class TelegramApi(private val httpClient: HttpClient, accessKey: String) {
     }
 
     fun sendChatAction(action: TelegramChatActionRequest): Boolean = runBlocking {
-        val telegramResponse = httpClient.post<TelegramResponse<Boolean>>() {
+        val telegramResponse = client.post<TelegramResponse<Boolean>>() {
             contentType(ContentType.Application.Json)
             url("${rootUrl}/sendChatAction")
             body = action
@@ -99,7 +134,7 @@ class TelegramApi(private val httpClient: HttpClient, accessKey: String) {
             }
         }
 
-        val telegramResponse = httpClient.post<TelegramResponse<TelegramMessage>>() {
+        val telegramResponse = client.post<TelegramResponse<TelegramMessage>>() {
             url("${rootUrl}/sendPhoto")
             body = formDataContent
         }
@@ -124,7 +159,7 @@ class TelegramApi(private val httpClient: HttpClient, accessKey: String) {
             audioRequest.title?.let { append("title", it.toString()) }
         }
 
-        val telegramResponse = httpClient.post<TelegramResponse<TelegramMessage>>() {
+        val telegramResponse = client.post<TelegramResponse<TelegramMessage>>() {
             url("${rootUrl}/sendAudio")
             body = formDataContent
         }
@@ -147,7 +182,7 @@ class TelegramApi(private val httpClient: HttpClient, accessKey: String) {
             voiceRequest.duration?.let { append("duration", it.toString()) }
         }
 
-        val telegramResponse = httpClient.post<TelegramResponse<TelegramMessage>>() {
+        val telegramResponse = client.post<TelegramResponse<TelegramMessage>>() {
             url("${rootUrl}/sendVoice")
             body = formDataContent
         }
@@ -170,7 +205,7 @@ class TelegramApi(private val httpClient: HttpClient, accessKey: String) {
             ) { buildPacket { writeFully(documentRequest.document.data) } }
         }
 
-        val telegramResponse = httpClient.post<TelegramResponse<TelegramMessage>>() {
+        val telegramResponse = client.post<TelegramResponse<TelegramMessage>>() {
             url("${rootUrl}/sendDocument")
             body = formDataContent
         }
@@ -197,8 +232,7 @@ class TelegramApi(private val httpClient: HttpClient, accessKey: String) {
             }
         }
 
-        val telegramResponse = httpClient.post<TelegramResponse<TelegramMessage>>() {
-            headers.append("Content-Type", MULTIPART_CONTENT_TYPE);
+        val telegramResponse = client.post<TelegramResponse<TelegramMessage>>() {
             url("${rootUrl}/sendVideo")
             body = formDataContent
         }
@@ -225,8 +259,7 @@ class TelegramApi(private val httpClient: HttpClient, accessKey: String) {
             }
         }
 
-        val telegramResponse = httpClient.post<TelegramResponse<TelegramMessage>>() {
-            headers.append("Content-Type", MULTIPART_CONTENT_TYPE);
+        val telegramResponse = client.post<TelegramResponse<TelegramMessage>>() {
             url("${rootUrl}/sendAnimation")
             body = formDataContent
         }
@@ -235,7 +268,7 @@ class TelegramApi(private val httpClient: HttpClient, accessKey: String) {
     }
 
     fun sendVenue(venueRequest: TelegramVenueRequest): TelegramMessage = runBlocking {
-        val telegramResponse = httpClient.post<TelegramResponse<TelegramMessage>>() {
+        val telegramResponse = client.post<TelegramResponse<TelegramMessage>>() {
             contentType(ContentType.Application.Json)
             url("${rootUrl}/sendVenue")
             body = venueRequest
@@ -245,7 +278,7 @@ class TelegramApi(private val httpClient: HttpClient, accessKey: String) {
     }
 
     fun sendContact(contactRequest: TelegramContactRequest): TelegramMessage = runBlocking {
-        val telegramResponse = httpClient.post<TelegramResponse<TelegramMessage>>() {
+        val telegramResponse = client.post<TelegramResponse<TelegramMessage>>() {
             contentType(ContentType.Application.Json)
             url("${rootUrl}/sendContact")
             body = contactRequest
@@ -255,7 +288,7 @@ class TelegramApi(private val httpClient: HttpClient, accessKey: String) {
     }
 
     fun sendPoll(pollRequest: TelegramPollRequest): TelegramMessage = runBlocking {
-        val telegramResponse = httpClient.post<TelegramResponse<TelegramMessage>>() {
+        val telegramResponse = client.post<TelegramResponse<TelegramMessage>>() {
             contentType(ContentType.Application.Json)
             url("${rootUrl}/sendPoll")
             body = pollRequest
@@ -265,7 +298,7 @@ class TelegramApi(private val httpClient: HttpClient, accessKey: String) {
     }
 
     fun sendDice(diceRequest: TelegramDiceRequest): TelegramMessage = runBlocking {
-        val telegramResponse = httpClient.post<TelegramResponse<TelegramMessage>>() {
+        val telegramResponse = client.post<TelegramResponse<TelegramMessage>>() {
             contentType(ContentType.Application.Json)
             url("${rootUrl}/sendDice")
             body = diceRequest
@@ -275,7 +308,7 @@ class TelegramApi(private val httpClient: HttpClient, accessKey: String) {
     }
 
     fun kickChatMember(kickChatMemberRequest: TelegramKickChatMemberRequest): Boolean = runBlocking {
-        val telegramResponse = httpClient.post<TelegramResponse<Boolean>>() {
+        val telegramResponse = client.post<TelegramResponse<Boolean>>() {
             contentType(ContentType.Application.Json)
             url("${rootUrl}/kickChatMember")
             body = kickChatMemberRequest
@@ -285,7 +318,7 @@ class TelegramApi(private val httpClient: HttpClient, accessKey: String) {
     }
 
     fun unbanChatMember(unbanChatMemberRequest: TelegramUnbanChatMemberRequest): Boolean = runBlocking {
-        val telegramResponse = httpClient.post<TelegramResponse<Boolean>>() {
+        val telegramResponse = client.post<TelegramResponse<Boolean>>() {
             contentType(ContentType.Application.Json)
             url("${rootUrl}/unbanChatMember")
             body = unbanChatMemberRequest
@@ -295,7 +328,7 @@ class TelegramApi(private val httpClient: HttpClient, accessKey: String) {
     }
 
     fun restrictChatMember(restrictChatMemberRequest: TelegramRestrictChatMemberRequest): Boolean = runBlocking {
-        val telegramResponse = httpClient.post<TelegramResponse<Boolean>>() {
+        val telegramResponse = client.post<TelegramResponse<Boolean>>() {
             contentType(ContentType.Application.Json)
             url("${rootUrl}/restrictChatMember")
             body = restrictChatMemberRequest
@@ -305,7 +338,7 @@ class TelegramApi(private val httpClient: HttpClient, accessKey: String) {
     }
 
     fun promoteChatMemberRequest(promoteChatMemberRequest: TelegramPromoteChatMemberRequest): Boolean = runBlocking {
-        val telegramResponse = httpClient.post<TelegramResponse<Boolean>>() {
+        val telegramResponse = client.post<TelegramResponse<Boolean>>() {
             contentType(ContentType.Application.Json)
             url("${rootUrl}/promoteChatMember")
             body = promoteChatMemberRequest
@@ -316,7 +349,7 @@ class TelegramApi(private val httpClient: HttpClient, accessKey: String) {
 
     fun setChatAdministratorCustomTitle(chatAdminCustomTitleRequest: TelegramChatAdminCustomTitleRequest): Boolean =
         runBlocking {
-            val response = httpClient.post<TelegramResponse<Boolean>>() {
+            val response = client.post<TelegramResponse<Boolean>>() {
                 contentType(ContentType.Application.Json)
                 url("${rootUrl}/setChatAdministratorCustomTitle")
                 body = chatAdminCustomTitleRequest
@@ -326,7 +359,7 @@ class TelegramApi(private val httpClient: HttpClient, accessKey: String) {
         }
 
     fun setChatPermissions(chatPermissionRequest: TelegramChatPermissionRequest): Boolean = runBlocking {
-        val response = httpClient.post<TelegramResponse<Boolean>>() {
+        val response = client.post<TelegramResponse<Boolean>>() {
             contentType(ContentType.Application.Json)
             url("${rootUrl}/setChatPermissions")
             body = chatPermissionRequest
@@ -337,7 +370,7 @@ class TelegramApi(private val httpClient: HttpClient, accessKey: String) {
 
     fun exportChatInviteLink(chatId: Long): Boolean = runBlocking {
         val param = mapOf("chat_id" to chatId)
-        val response = httpClient.post<TelegramResponse<Boolean>>() {
+        val response = client.post<TelegramResponse<Boolean>>() {
             contentType(ContentType.Application.Json)
             url("${rootUrl}/exportChatInviteLink")
             body = param
@@ -356,8 +389,7 @@ class TelegramApi(private val httpClient: HttpClient, accessKey: String) {
                 ) { buildPacket { writeFully(photo) } }
             }
         )
-        val telegramResponse = httpClient.post<TelegramResponse<Boolean>>() {
-            headers.append("Content-Type", MULTIPART_CONTENT_TYPE);
+        val telegramResponse = client.post<TelegramResponse<Boolean>>() {
             url("${rootUrl}/setChatPhoto")
             body = formDataContent
         }
@@ -367,7 +399,7 @@ class TelegramApi(private val httpClient: HttpClient, accessKey: String) {
 
     fun deleteChatPhoto(chatId: Long): Boolean = runBlocking {
         val param = mapOf("chat_id" to chatId)
-        val telegramResponse = httpClient.post<TelegramResponse<Boolean>>() {
+        val telegramResponse = client.post<TelegramResponse<Boolean>>() {
             contentType(ContentType.Application.Json)
             url("${rootUrl}/deleteChatPhoto")
             body = param
@@ -378,7 +410,7 @@ class TelegramApi(private val httpClient: HttpClient, accessKey: String) {
 
     fun setChatTitle(chatId: Long, title: String): Boolean = runBlocking {
         val param = mapOf("chat_id" to chatId, "title" to title)
-        val telegramResponse = httpClient.post<TelegramResponse<Boolean>>() {
+        val telegramResponse = client.post<TelegramResponse<Boolean>>() {
             contentType(ContentType.Application.Json)
             url("${rootUrl}/setChatTitle")
             body = param
@@ -389,7 +421,7 @@ class TelegramApi(private val httpClient: HttpClient, accessKey: String) {
 
     fun setChatDescription(chatId: Long, description: String): Boolean = runBlocking {
         val param = mapOf("chat_id" to chatId, "description" to description)
-        val telegramResponse = httpClient.post<TelegramResponse<Boolean>>() {
+        val telegramResponse = client.post<TelegramResponse<Boolean>>() {
             contentType(ContentType.Application.Json)
             url("${rootUrl}/setChatDescription")
             body = param
@@ -404,7 +436,7 @@ class TelegramApi(private val httpClient: HttpClient, accessKey: String) {
             "message_id" to messageId,
             "disable_notification" to disableNotification
         )
-        val telegramResponse = httpClient.post<TelegramResponse<Boolean>>() {
+        val telegramResponse = client.post<TelegramResponse<Boolean>>() {
             contentType(ContentType.Application.Json)
             url("${rootUrl}/pinChatMessage")
             body = param
@@ -415,7 +447,7 @@ class TelegramApi(private val httpClient: HttpClient, accessKey: String) {
 
     fun unpinChatMessage(chatId: Long): Boolean = runBlocking {
         val param = mapOf("chat_id" to chatId)
-        val telegramResponse = httpClient.post<TelegramResponse<Boolean>>() {
+        val telegramResponse = client.post<TelegramResponse<Boolean>>() {
             contentType(ContentType.Application.Json)
             url("${rootUrl}/unpinChatMessage")
             body = param
@@ -426,7 +458,7 @@ class TelegramApi(private val httpClient: HttpClient, accessKey: String) {
 
     fun leaveChat(chatId: Long): Boolean = runBlocking {
         val param = mapOf("chat_id" to chatId)
-        val telegramResponse = httpClient.post<TelegramResponse<Boolean>>() {
+        val telegramResponse = client.post<TelegramResponse<Boolean>>() {
             contentType(ContentType.Application.Json)
             url("${rootUrl}/leaveChat")
             body = param
@@ -437,7 +469,7 @@ class TelegramApi(private val httpClient: HttpClient, accessKey: String) {
 
     fun getChat(chatId: Long): TelegramChat = runBlocking {
         val param = mapOf("chat_id" to chatId)
-        val telegramResponse = httpClient.post<TelegramResponse<TelegramChat>>() {
+        val telegramResponse = client.post<TelegramResponse<TelegramChat>>() {
             contentType(ContentType.Application.Json)
             url("${rootUrl}/getChat")
             body = param
@@ -448,7 +480,7 @@ class TelegramApi(private val httpClient: HttpClient, accessKey: String) {
 
     fun getChatAdministrators(chatId: Long): List<TelegramChatMember> = runBlocking {
         val param = mapOf("chat_id" to chatId)
-        val telegramResponse = httpClient.post<TelegramResponse<List<TelegramChatMember>>>() {
+        val telegramResponse = client.post<TelegramResponse<List<TelegramChatMember>>>() {
             contentType(ContentType.Application.Json)
             url("${rootUrl}/getChatAdministrators")
             body = param
@@ -459,7 +491,7 @@ class TelegramApi(private val httpClient: HttpClient, accessKey: String) {
 
     fun getChatMembersCount(chatId: Long): Int = runBlocking {
         val param = mapOf("chat_id" to chatId)
-        val telegramResponse = httpClient.post<TelegramResponse<Int>>() {
+        val telegramResponse = client.post<TelegramResponse<Int>>() {
             contentType(ContentType.Application.Json)
             url("${rootUrl}/getChatMembersCount")
             body = param
@@ -470,7 +502,7 @@ class TelegramApi(private val httpClient: HttpClient, accessKey: String) {
 
     fun getChatMember(chatId: Long, userId: Int): TelegramChatMember = runBlocking {
         val param = mapOf("chat_id" to chatId, "user_id" to userId)
-        val telegramResponse = httpClient.post<TelegramResponse<TelegramChatMember>>() {
+        val telegramResponse = client.post<TelegramResponse<TelegramChatMember>>() {
             contentType(ContentType.Application.Json)
             url("${rootUrl}/getChatMember")
             body = param
@@ -481,7 +513,7 @@ class TelegramApi(private val httpClient: HttpClient, accessKey: String) {
 
     fun setMyCommands(commands: List<TelegramBotCommand>): Boolean = runBlocking {
         val param = mapOf("commands" to commands)
-        val telegramResponse = httpClient.post<TelegramResponse<Boolean>>() {
+        val telegramResponse = client.post<TelegramResponse<Boolean>>() {
             contentType(ContentType.Application.Json)
             url("${rootUrl}/setMyCommands")
             body = param
@@ -491,7 +523,7 @@ class TelegramApi(private val httpClient: HttpClient, accessKey: String) {
     }
 
     fun getMyCommands(): List<TelegramBotCommand> = runBlocking {
-        val telegramResponse = httpClient.get<TelegramResponse<List<TelegramBotCommand>>> {
+        val telegramResponse = client.get<TelegramResponse<List<TelegramBotCommand>>> {
             url("${rootUrl}/getMyCommands")
         }
 
@@ -500,10 +532,20 @@ class TelegramApi(private val httpClient: HttpClient, accessKey: String) {
 
     fun getFile(fileId: String): TelegramFile = runBlocking {
         val param = mapOf("file_id" to fileId)
-        val telegramResponse = httpClient.post<TelegramResponse<TelegramFile>>() {
+        val telegramResponse = client.post<TelegramResponse<TelegramFile>>() {
             contentType(ContentType.Application.Json)
             url("${rootUrl}/sendDice")
             body = param
+        }
+
+        processTelegramResponse(telegramResponse)
+    }
+
+    fun answerInlineQuery(inlineQueryAnswer: InlineQueryAnswer): Boolean = runBlocking {
+        val telegramResponse = client.post<TelegramResponse<Boolean>>() {
+            contentType(ContentType.Application.Json)
+            url("${rootUrl}/answerInlineQuery")
+            body = inlineQueryAnswer
         }
 
         processTelegramResponse(telegramResponse)
