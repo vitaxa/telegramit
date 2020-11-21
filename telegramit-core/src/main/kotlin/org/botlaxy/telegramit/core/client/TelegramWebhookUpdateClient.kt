@@ -11,7 +11,7 @@ import io.ktor.routing.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import mu.KotlinLogging
-import org.botlaxy.telegramit.core.Bot
+import org.botlaxy.telegramit.core.TelegramBot
 import org.botlaxy.telegramit.core.client.api.TelegramApi
 import org.botlaxy.telegramit.core.client.model.TelegramUpdate
 
@@ -21,7 +21,7 @@ class TelegramWebhookUpdateClient(
     private val telegramApi: TelegramApi,
     private val updateListener: UpdateListener,
     botToken: String,
-    private val clientConfig: Bot.TelegramWebhookClientConfig
+    private val clientConfig: TelegramBot.TelegramWebhookClientConfig
 ) : TelegramUpdateClient {
 
     private val path: String = "/hooker/${botToken.split(":")[1].encodeURLPath()}"

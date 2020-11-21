@@ -21,7 +21,7 @@ repositories {
     mavenCentral()
 }
 
-val telegramitVersion = "0.1.14"
+val telegramitVersion = "0.1.15"
 val ktorVersion = "1.4.0"
 
 dependencies {

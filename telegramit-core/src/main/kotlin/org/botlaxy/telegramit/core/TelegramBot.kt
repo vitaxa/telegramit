@@ -34,9 +34,9 @@ private val logger = KotlinLogging.logger {}
 @DslMarker
 annotation class BotDsl
 
-fun bot(body: Bot.BotBuilder.() -> Unit) = Bot.BotBuilder().build(body)
+fun bot(body: TelegramBot.BotBuilder.() -> Unit) = TelegramBot.BotBuilder().build(body)
 
-class Bot private constructor(
+class TelegramBot private constructor(
     val name: String,
     val token: String,
     val telegramClientConfig: TelegramClientConfig,
@@ -76,20 +76,20 @@ class Bot private constructor(
             .filter { handler -> handler.type() == TelegramHandlerType.CONVERSATION }
             .map { handler -> handler as ConversationTelegramHandler }
         val inlineHandler = handlers
-            .find { handler -> handler.type() == TelegramHandlerType.INLINE } as InlineTelegramHandler
+            .find { handler -> handler.type() == TelegramHandlerType.INLINE } as? InlineTelegramHandler
         conversationManager = ConversationManager(
             telegramApi!!,
             conversationHandler,
             conversationPersistenceConfig?.conversationPersistence
         )
         val customUpdateFilters = updateFilters ?: emptyList()
-        val filters = arrayOf(
-            *customUpdateFilters.toTypedArray(),
-            InlineUpdateFilter(inlineHandler, telegramApi!!),
-            CancelUpdateFilter(conversationManager!!),
-            HandlerUpdateFilter(conversationManager!!),
-            UnknownUpdateFilter(telegramApi!!)
-        )
+        val filters = mutableListOf<TelegramUpdateFilter>(*customUpdateFilters.toTypedArray())
+        inlineHandler?.let { filters.add(InlineUpdateFilter(it, telegramApi!!)) }
+        filters.apply {
+            add(CancelUpdateFilter(conversationManager!!))
+            add(HandlerUpdateFilter(conversationManager!!))
+            add(UnknownUpdateFilter(telegramApi!!))
+        }
         val updListener = updateListener ?: FilterUpdateListener(filters)
 
         telegramUpdateClient = resolveTelegramClient(telegramApi!!, updListener, telegramClientConfig)
@@ -251,9 +251,9 @@ class Bot private constructor(
             handlerScriptConfig = HandlerScriptConfigBuilder().apply(block).build()
         }
 
-        fun build(body: BotBuilder.() -> Unit): Bot {
+        fun build(body: BotBuilder.() -> Unit): TelegramBot {
             body()
-            return Bot(
+            return TelegramBot(
                 name,
                 token,
                 telegramClientConfig,

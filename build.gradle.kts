@@ -9,7 +9,7 @@ plugins {
 
 allprojects {
     group = "org.botlaxy"
-    version = "0.1.14"
+    version = "0.1.15"
 
     repositories {
         jcenter()
@@ -24,7 +24,7 @@ val kotlinLogVersion = "1.7.7"
 val mapDb = "3.0.8"
 val jnaVersion = "4.2.2"
 val emojiVersion = "5.1.1"
-val ktorVersion = "1.4.0"
+val ktorVersion = "1.4.2"
 val mockWebServerVersion = "4.4.0"
 
 subprojects {

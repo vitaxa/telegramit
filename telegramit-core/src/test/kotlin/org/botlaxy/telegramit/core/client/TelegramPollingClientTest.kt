@@ -4,7 +4,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
-import org.botlaxy.telegramit.core.Bot
+import org.botlaxy.telegramit.core.TelegramBot
 import org.botlaxy.telegramit.core.client.api.TelegramApi
 import org.botlaxy.telegramit.core.client.model.TelegramResponse
 import org.botlaxy.telegramit.core.client.model.TelegramUpdate
@@ -20,7 +20,7 @@ class TelegramPollingClientTest {
     lateinit var telegramApi: TelegramApi
 
     @MockK(relaxed = true)
-    lateinit var clientConfig: Bot.TelegramPoolingClientConfig
+    lateinit var clientConfig: TelegramBot.TelegramPoolingClientConfig
 
     lateinit var telegramPollingClient: TelegramPollingUpdateClient
 

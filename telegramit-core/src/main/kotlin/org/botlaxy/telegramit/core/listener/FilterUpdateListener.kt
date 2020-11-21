@@ -10,16 +10,16 @@ import org.botlaxy.telegramit.core.handler.filter.TelegramUpdateFilter
 import org.botlaxy.telegramit.core.handler.filter.TelegramUpdateFilterChain
 
 class FilterUpdateListener(
-    private val updateFilters: Array<TelegramUpdateFilter>
+    private val updateFilters: List<TelegramUpdateFilter>
 ) : UpdateListener {
 
     override fun onUpdate(update: TelegramUpdate) {
         var filterChain: TelegramUpdateFilterChain? = null
         if (update.getMessage() != null || update.getEditMessage() != null) {
-            filterChain = DefaultTelegramUpdateFilterChain(updateFilters.asList())
+            filterChain = DefaultTelegramUpdateFilterChain(updateFilters)
         }
         if (update.isInlineMessage()) {
-            filterChain = DefaultTelegramUpdateFilterChain(updateFilters.asList())
+            filterChain = DefaultTelegramUpdateFilterChain(updateFilters)
         }
         filterChain?.doFilter(update)
     }

@@ -13,12 +13,11 @@ import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
 import okhttp3.tls.HandshakeCertificates
 import okhttp3.tls.HeldCertificate
-import org.botlaxy.telegramit.core.Bot
+import org.botlaxy.telegramit.core.TelegramBot
 import org.botlaxy.telegramit.core.client.api.TelegramApi
 import java.nio.file.Paths
 import java.security.KeyStore
 import javax.net.ssl.HostnameVerifier
-import javax.net.ssl.HttpsURLConnection
 import kotlin.test.*
 
 class TelegramWebhookClientTest {
@@ -42,7 +41,7 @@ class TelegramWebhookClientTest {
         val publicKeyFile = Paths.get(publicKeyUri).toFile()
         val pemUri = TelegramWebhookClientTest::class.java.getResource("/cert/self-signed.pem").toURI()
         val pemFile = Paths.get(pemUri).toFile()
-        val clientConfig = mockk<Bot.TelegramWebhookClientConfig>() {
+        val clientConfig = mockk<TelegramBot.TelegramWebhookClientConfig>() {
             every { host } returns "localhost"
             every { port } returns 7777
             every { keyStore } returns KeyStore.getInstance(certFile, "testPassword".toCharArray())

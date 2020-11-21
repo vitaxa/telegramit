@@ -1,7 +1,7 @@
 package org.botlaxy.telegramit.core.client
 
 import mu.KotlinLogging
-import org.botlaxy.telegramit.core.Bot
+import org.botlaxy.telegramit.core.TelegramBot
 import org.botlaxy.telegramit.core.client.api.TelegramApi
 import org.botlaxy.telegramit.core.client.model.TelegramUpdate
 import java.util.concurrent.TimeUnit
@@ -12,7 +12,7 @@ private val logger = KotlinLogging.logger {}
 class TelegramPollingUpdateClient(
     private val telegramApi: TelegramApi,
     private val updateListener: UpdateListener,
-    val config: Bot.TelegramPoolingClientConfig
+    val config: TelegramBot.TelegramPoolingClientConfig
 ) : TelegramUpdateClient {
 
     private val timeout = config.timeoutInSec ?: DEFAULT_POOLING_TIMEOUT
