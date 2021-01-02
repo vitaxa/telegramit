@@ -20,14 +20,17 @@ import org.botlaxy.telegramit.core.handler.dsl.TelegramHandlerType
 import org.botlaxy.telegramit.core.handler.dsl.InlineTelegramHandler
 import org.botlaxy.telegramit.core.handler.filter.*
 import org.botlaxy.telegramit.core.handler.loader.HandlerScriptManager
+import org.botlaxy.telegramit.core.handler.loader.collect.ScriptCollector
 import org.botlaxy.telegramit.core.handler.loader.compile.KotlinScriptCompiler
 import org.botlaxy.telegramit.core.listener.FilterUpdateListener
+import org.jetbrains.kotlin.script.jsr223.KotlinJsr223JvmLocalScriptEngineFactory
 import java.io.File
 import java.net.PasswordAuthentication
 import java.net.Proxy
 import java.security.KeyStore
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import javax.script.ScriptEngineFactory
 
 private val logger = KotlinLogging.logger {}
 
@@ -68,9 +71,7 @@ class TelegramBot private constructor(
         telegramHttpClient = buildHttpClient(proxyConfig)
         telegramApi = TelegramApi(telegramHttpClient!!, token)
 
-        val handlerHotReload = handlerScriptConfig?.handlerHotReload ?: false
-        val handlerScriptPath = handlerScriptConfig?.handlerScriptPath
-        handlerScriptManager = newHandlerScriptManager(handlerScriptPath, handlerHotReload)
+        handlerScriptManager = newHandlerScriptManager(handlerScriptConfig)
         val handlers: List<TelegramHandler> = handlerScriptManager!!.compileHandlerFiles()
         val conversationHandler = handlers
             .filter { handler -> handler.type() == TelegramHandlerType.CONVERSATION }
@@ -88,7 +89,6 @@ class TelegramBot private constructor(
         filters.apply {
             add(CancelUpdateFilter(conversationManager!!))
             add(HandlerUpdateFilter(conversationManager!!))
-            add(UnknownUpdateFilter(telegramApi!!))
         }
         val updListener = updateListener ?: FilterUpdateListener(filters)
 
@@ -108,8 +108,13 @@ class TelegramBot private constructor(
         logger.info { "Bot '$name' successfully stopped" }
     }
 
-    private fun newHandlerScriptManager(scriptPath: String?, hotReload: Boolean): HandlerScriptManager {
-        return HandlerScriptManager(KotlinScriptCompiler(), scriptPath, hotReload) { oldHandler, newHandler ->
+    private fun newHandlerScriptManager(handlerScriptConfig: HandlerScriptConfig?): HandlerScriptManager {
+        return HandlerScriptManager(
+            KotlinScriptCompiler(handlerScriptConfig?.scriptEngineFactory ?: KotlinJsr223JvmLocalScriptEngineFactory()),
+            handlerScriptConfig?.handlerScriptPath,
+            handlerScriptConfig?.handlerHotReload ?: false,
+            handlerScriptConfig?.scriptCollector
+        ) { oldHandler, newHandler ->
             logger.debug { "Handler was changed. From $oldHandler to $newHandler" }
             if (newHandler.type() == TelegramHandlerType.CONVERSATION) {
                 val clearConversation: Boolean = conversationPersistenceConfig?.clearOnHandlerChange ?: true
@@ -298,16 +303,20 @@ class TelegramBot private constructor(
 
     data class HandlerScriptConfig(
         val handlerScriptPath: String?,
-        val handlerHotReload: Boolean
+        val handlerHotReload: Boolean,
+        val scriptCollector: ScriptCollector?,
+        val scriptEngineFactory: ScriptEngineFactory?
     )
 
     @BotDsl
     class HandlerScriptConfigBuilder {
         var handlerScriptPath: String? = null
         var handlerHotReload: Boolean = false
+        var scriptCollector: ScriptCollector? = null
+        var scriptEngineFactory: ScriptEngineFactory? = null
 
         fun build(): HandlerScriptConfig {
-            return HandlerScriptConfig(handlerScriptPath, handlerHotReload)
+            return HandlerScriptConfig(handlerScriptPath, handlerHotReload, scriptCollector, scriptEngineFactory)
         }
     }
 

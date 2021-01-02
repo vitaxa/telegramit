@@ -1,9 +1,6 @@
 package org.botlaxy.telegramit.core.extension
 
-import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.WatchEvent
-import java.nio.file.WatchService
+import java.nio.file.*
 import java.security.MessageDigest
 import kotlin.experimental.and
 
@@ -30,4 +27,12 @@ fun Path.md5(): String {
         sb.append(((element and 0xff.toByte()) + 0x100).toString(16).substring(1))
     }
     return sb.toString()
+}
+
+fun Path.copy(target: Path) {
+    val parent: Path = target.parent
+    if (!Files.isDirectory(parent)) {
+        Files.createDirectories(parent)
+    }
+    Files.copy(this, target, StandardCopyOption.REPLACE_EXISTING)
 }

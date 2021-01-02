@@ -11,9 +11,9 @@ import javax.script.ScriptEngineFactory
 
 private val logger = KotlinLogging.logger {}
 
-class KotlinScriptCompiler : HandlerScriptCompiler {
-
-    private val scriptEngineFactory: ScriptEngineFactory = KotlinJsr223JvmLocalScriptEngineFactory()
+class KotlinScriptCompiler(
+    private val scriptEngineFactory: ScriptEngineFactory
+) : HandlerScriptCompiler {
 
     override fun compile(file: Path): TelegramHandler {
         return try {

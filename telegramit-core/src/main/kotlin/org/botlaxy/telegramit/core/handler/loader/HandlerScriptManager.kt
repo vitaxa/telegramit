@@ -19,8 +19,16 @@ class HandlerScriptManager(
     private val handlerScriptCompiler: HandlerScriptCompiler,
     val handlerScriptDir: String?,
     val handlerHotReload: Boolean = false,
+    val scriptCollector: ScriptCollector? = null,
     private val scriptChangeListener: ((oldHandler: TelegramHandler?, newHandler: TelegramHandler) -> Unit)? = null
 ) {
+
+    constructor(
+        handlerScriptCompiler: HandlerScriptCompiler,
+        handlerHotReload: Boolean = false,
+        scriptCollector: ScriptCollector? = null,
+        scriptChangeListener: ((oldHandler: TelegramHandler?, newHandler: TelegramHandler) -> Unit)?
+    ) : this(handlerScriptCompiler, null, handlerHotReload, scriptCollector, scriptChangeListener)
 
     private val handlerScriptPath: Path = if (handlerScriptDir != null) {
         Paths.get(handlerScriptDir)
@@ -28,11 +36,12 @@ class HandlerScriptManager(
         Paths.get(System.getProperty("user.dir")).resolve(HandlerConstant.HANDLERS_DIR)
     }
 
-    private val handlerScriptCollector: ScriptCollector = if (handlerScriptDir != null) {
-        DirectoryScriptCollector(handlerScriptDir)
-    } else {
-        ClassPathScriptCollector()
-    }
+    private val handlerScriptCollector: ScriptCollector = scriptCollector
+        ?: if (handlerScriptDir != null) {
+            DirectoryScriptCollector(handlerScriptDir)
+        } else {
+            ClassPathScriptCollector()
+        }
 
     private var mutex = Object()
 

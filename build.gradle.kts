@@ -9,7 +9,7 @@ plugins {
 
 allprojects {
     group = "org.botlaxy"
-    version = "0.1.15"
+    version = "0.1.16"
 
     repositories {
         jcenter()
