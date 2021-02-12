@@ -27,14 +27,21 @@ class TelegramWebhookUpdateClient(
     private val path: String = "/hooker/${botToken.split(":")[1].encodeURLPath()}"
 
     private val env = applicationEngineEnvironment {
-        sslConnector(
-            keyStore = clientConfig.keyStore,
-            keyAlias = clientConfig.keyAlias,
-            keyStorePassword = { clientConfig.keyStorePassword.toCharArray() },
-            privateKeyPassword = { clientConfig.privateKeyPassword.toCharArray() }) {
-            host = clientConfig.host ?: DEFAULT_HOST
-            port = clientConfig.port ?: DEFAULT_PORT
-            keyStorePath = clientConfig.keyStoreFile.absoluteFile
+        if (clientConfig.sslConfig != null) {
+            sslConnector(
+                keyStore = clientConfig.sslConfig.keyStore,
+                keyAlias = clientConfig.sslConfig.keyAlias,
+                keyStorePassword = { clientConfig.sslConfig.keyStorePassword.toCharArray() },
+                privateKeyPassword = { clientConfig.sslConfig.privateKeyPassword.toCharArray() }) {
+                host = clientConfig.host ?: DEFAULT_HOST
+                port = clientConfig.port ?: DEFAULT_PORT
+                keyStorePath = clientConfig.sslConfig.keyStoreFile.absoluteFile
+            }
+        } else {
+            connector {
+                host = clientConfig.host ?: DEFAULT_HOST
+                port = clientConfig.port ?: DEFAULT_PORT
+            }
         }
         module {
             install(ContentNegotiation) {
@@ -60,7 +67,11 @@ class TelegramWebhookUpdateClient(
         val url = "${scheme}://${engineConnectorConfig.host}:${engineConnectorConfig.port}$path"
         logger.debug { "Start Telegram webhook client. Url: $url" }
         server.start()
-        telegramApi.setWebhook(url, clientConfig.publicKeyFile)
+        if (clientConfig.sslConfig?.publicKeyFile != null) {
+            telegramApi.setWebhook(url, clientConfig.sslConfig.publicKeyFile)
+        } else {
+            telegramApi.setWebhook(url)
+        }
     }
 
     override fun onUpdate(update: TelegramUpdate) {

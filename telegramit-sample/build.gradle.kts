@@ -1,7 +1,7 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
 plugins {
-    kotlin("jvm") version "1.4.0"
+    kotlin("jvm") version "1.4.30"
     id("com.github.johnrengelman.shadow") version "5.2.0"
 }
 
@@ -21,8 +21,8 @@ repositories {
     mavenCentral()
 }
 
-val telegramitVersion = "0.1.16"
-val ktorVersion = "1.4.0"
+val telegramitVersion = "0.1.20"
+val ktorVersion = "1.5.1"
 
 dependencies {
     implementation(kotlin("stdlib-jdk8"))

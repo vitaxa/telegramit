@@ -2,14 +2,20 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinPluginWrapper
 import com.jfrog.bintray.gradle.BintrayExtension
 
 plugins {
-    kotlin("jvm") version "1.4.0"
+    kotlin("jvm") version "1.4.30"
     `maven-publish`
     id("com.jfrog.bintray") version "1.8.5"
+
+    // Spring
+    id("org.springframework.boot") version "2.4.1" apply false
+    id("io.spring.dependency-management") version "1.0.10.RELEASE" apply false
+    kotlin("kapt") version "1.4.30" apply false
+    kotlin("plugin.spring") version "1.4.30" apply false
 }
 
 allprojects {
     group = "org.botlaxy"
-    version = "0.1.16"
+    version = "0.1.20"
 
     repositories {
         jcenter()
@@ -24,7 +30,7 @@ val kotlinLogVersion = "1.7.7"
 val mapDb = "3.0.8"
 val jnaVersion = "4.2.2"
 val emojiVersion = "5.1.1"
-val ktorVersion = "1.4.2"
+val ktorVersion = "1.5.1"
 val mockWebServerVersion = "4.4.0"
 
 subprojects {
@@ -46,15 +52,17 @@ subprojects {
         implementation(kotlin("script-runtime", kotlinVersion))
         implementation(kotlin("compiler-embeddable", kotlinVersion))
         implementation(kotlin("scripting-compiler-embeddable", kotlinVersion))
+        implementation("com.fasterxml.jackson.core:jackson-databind:$jacksonVersion")
+        implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
+
         implementation("io.ktor:ktor-server-netty:$ktorVersion")
         api("io.ktor:ktor-client-okhttp:$ktorVersion")
         implementation("io.ktor:ktor-client-logging-jvm:$ktorVersion")
         implementation("io.ktor:ktor-client-json-jvm:$ktorVersion")
         implementation("io.ktor:ktor-client-jackson:$ktorVersion")
         implementation("io.ktor:ktor-jackson:$ktorVersion")
+
         implementation("com.vdurmont:emoji-java:$emojiVersion")
-        implementation("com.fasterxml.jackson.core:jackson-databind:$jacksonVersion")
-        implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
         implementation("net.java.dev.jna:jna:$jnaVersion")
         implementation("ch.qos.logback:logback-classic:$logbackVersion")
         implementation("io.github.microutils:kotlin-logging:$kotlinLogVersion")

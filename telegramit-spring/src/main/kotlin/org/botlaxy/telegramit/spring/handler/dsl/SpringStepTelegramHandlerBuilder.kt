@@ -1,26 +1,36 @@
-package org.botlaxy.telegramit.core.handler.dsl
+package org.botlaxy.telegramit.spring.handler.dsl
 
 import org.botlaxy.telegramit.core.handler.CommandParser
 import org.botlaxy.telegramit.core.handler.DefaultCommandParser
 import org.botlaxy.telegramit.core.handler.HandlerException
+import org.botlaxy.telegramit.core.handler.dsl.*
+import org.springframework.context.support.GenericApplicationContext
 
 @DslMarker
-annotation class ConversationHandlerDsl
+annotation class SpringStepHandlerDsl
 
-fun handler(vararg commands: String, body: ConversationTelegramHandlerBuilder.() -> Unit): ConversationTelegramHandler {
-    val handlerBuilder = ConversationTelegramHandlerBuilder(commands.asList())
-    return handlerBuilder.build(body)
+fun springHandler(
+    vararg commands: String,
+    body: SpringStepTelegramHandlerBuilder.() -> Unit
+): SpringHandlerDslWrapper {
+    return { context ->
+        val handlerBuilder = SpringStepTelegramHandlerBuilder(commands.asList(), context)
+        handlerBuilder.build(body)
+    }
 }
 
-@ConversationHandlerDsl
-class ConversationTelegramHandlerBuilder(private val commands: List<String>) {
+@SpringStepHandlerDsl
+class SpringStepTelegramHandlerBuilder(
+    private val commands: List<String>,
+    val context: GenericApplicationContext,
+) {
 
-    private val stepBuilders: MutableList<StepBuilder<*>> = arrayListOf()
+    private val stepBuilders: MutableList<SpringStepBuilder<*>> = arrayListOf()
     private var process: ProcessBlock? = null
     private var commandParser: CommandParser = DefaultCommandParser()
 
-    fun <T : Any> step(key: String, block: StepBuilder<T>.() -> Unit): StepBuilder<T> {
-        val stepBuilder: StepBuilder<T> = StepBuilder<T>(key).apply(block)
+    fun <T : Any> step(key: String, block: SpringStepBuilder<T>.() -> Unit): SpringStepBuilder<T> {
+        val stepBuilder: SpringStepBuilder<T> = SpringStepBuilder<T>(key).apply(block)
         stepBuilders.add(stepBuilder)
 
         return stepBuilder
@@ -30,7 +40,7 @@ class ConversationTelegramHandlerBuilder(private val commands: List<String>) {
         this.process = processor
     }
 
-    internal fun build(body: ConversationTelegramHandlerBuilder.() -> Unit): ConversationTelegramHandler {
+    internal fun build(body: SpringStepTelegramHandlerBuilder.() -> Unit): SpringStepTelegramHandler {
         body()
         val steps = arrayListOf<Step<*>>()
         for ((index, stepBuilder) in stepBuilders.withIndex()) {
@@ -46,17 +56,18 @@ class ConversationTelegramHandlerBuilder(private val commands: List<String>) {
         }
         val handlerCommands = commands.map { cmd -> commandParser.parse(cmd) }
 
-        return ConversationTelegramHandler(
+        return SpringStepTelegramHandler(
             handlerCommands,
             steps.associateBy { it.key },
-            process ?: throw HandlerException("Process block must not be null")
+            process ?: throw HandlerException("Process block must not be null"),
+            context
         )
     }
 
 }
 
-@ConversationHandlerDsl
-class StepBuilder<T : Any>(val key: String) {
+@SpringStepHandlerDsl
+class SpringStepBuilder<T : Any>(val key: String) {
 
     private var entry: EntryBlock? = null
     private var validation: ValidationBlock? = null
@@ -90,3 +101,5 @@ class StepBuilder<T : Any>(val key: String) {
     }
 
 }
+
+typealias SpringHandlerDslWrapper = (GenericApplicationContext) -> SpringStepTelegramHandler

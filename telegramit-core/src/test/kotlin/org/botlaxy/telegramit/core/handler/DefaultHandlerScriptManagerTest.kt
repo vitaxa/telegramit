@@ -2,7 +2,7 @@ package org.botlaxy.telegramit.core.handler
 
 import org.junit.Test
 
-class HandlerScriptManagerTest {
+class DefaultHandlerScriptManagerTest {
 
     @Test
     fun `test handlers loading`() {

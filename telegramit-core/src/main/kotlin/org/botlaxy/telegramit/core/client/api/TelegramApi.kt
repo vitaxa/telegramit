@@ -84,10 +84,12 @@ class TelegramApi(httpClient: HttpClient, accessKey: String) {
         val reqBody = MultiPartFormDataContent(
             formData {
                 append("url", url)
-                appendInput(
-                    key = "certificate",
-                    size = certByteArray.size.toLong()
-                ) { buildPacket { writeFully(certByteArray) } }
+                if (certificate != null) {
+                    appendInput(
+                        key = "certificate",
+                        size = certByteArray.size.toLong()
+                    ) { buildPacket { writeFully(certByteArray) } }
+                }
             }
         )
         val telegramResponse = client.post<TelegramResponse<Boolean>>() {

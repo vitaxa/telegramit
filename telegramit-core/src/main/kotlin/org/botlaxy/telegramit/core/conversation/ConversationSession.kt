@@ -5,7 +5,7 @@ import org.botlaxy.telegramit.core.client.api.TelegramApi
 import org.botlaxy.telegramit.core.client.model.*
 import org.botlaxy.telegramit.core.handler.HandlerCommand
 import org.botlaxy.telegramit.core.handler.HandlerNotFound
-import org.botlaxy.telegramit.core.handler.dsl.ConversationTelegramHandler
+import org.botlaxy.telegramit.core.handler.dsl.StepTelegramHandler
 import java.util.*
 import java.util.concurrent.atomic.AtomicReference
 
@@ -14,7 +14,7 @@ private val logger = KotlinLogging.logger {}
 class ConversationSession(
     val chatId: Long,
     private val telegramApi: TelegramApi,
-    private val handlerMap: Map<HandlerCommand, ConversationTelegramHandler>,
+    private val handlerMap: Map<HandlerCommand, StepTelegramHandler>,
     private var initialState: ConversationState? = null,
     private val finishCallback: (() -> Unit)? = null
 ) {
@@ -153,6 +153,6 @@ class ConversationSession(
         conversationState = null
     }
 
-    private data class HandlerHolder(val handlerCommand: HandlerCommand, val handler: ConversationTelegramHandler)
+    private data class HandlerHolder(val handlerCommand: HandlerCommand, val handler: StepTelegramHandler)
 
 }
