@@ -420,20 +420,13 @@ class TelegramBot private constructor(
         var publicKeyFile: File? = null
 
         fun build(): SslConfig {
-            if (keyStore == null) throw IllegalStateException("'keyStore' can't be null")
-            if (keyAlias == null) throw IllegalStateException("'keyAlias' can't be null")
-            if (keyStorePassword == null) throw IllegalStateException("'keyStorePassword' can't be null")
-            if (privateKeyPassword == null) throw IllegalStateException("'privateKeyPassword' can't be null")
-            if (keyStoreFile == null) throw IllegalStateException("'keyStoreFile' can't be null")
-            if (publicKeyFile == null) throw IllegalStateException("'publicKeyFile' can't be null")
-
             return SslConfig(
-                keyStore!!,
-                keyAlias!!,
-                keyStorePassword!!,
-                privateKeyPassword!!,
-                keyStoreFile!!,
-                publicKeyFile!!
+                keyStore ?: throw IllegalStateException("'keyStore' can't be null"),
+                keyAlias ?: throw IllegalStateException("'keyAlias' can't be null"),
+                keyStorePassword ?: throw IllegalStateException("'keyStorePassword' can't be null"),
+                privateKeyPassword ?: throw IllegalStateException("'privateKeyPassword' can't be null"),
+                keyStoreFile ?: throw IllegalStateException("'keyStoreFile' can't be null"),
+                publicKeyFile ?: throw IllegalStateException("'publicKeyFile' can't be null")
             )
         }
     }
