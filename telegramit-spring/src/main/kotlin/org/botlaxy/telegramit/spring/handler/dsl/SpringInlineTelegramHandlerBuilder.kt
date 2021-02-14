@@ -17,7 +17,7 @@ fun springInlineHandler(body: SpringInlineTelegramHandlerBuilder.() -> Unit): Sp
 
 @SpringInlineHandlerDsl
 class SpringInlineTelegramHandlerBuilder(
-    private val context: GenericApplicationContext,
+    val context: GenericApplicationContext,
 ) {
 
     private var option: OptionConfig? = null
@@ -37,6 +37,10 @@ class SpringInlineTelegramHandlerBuilder(
 
     fun chosen(block: InlineChosenResultBlock) {
         this.chosenResult = block
+    }
+
+    inline fun <reified T> getBean(): T {
+        return context.getBean(T::class.java)
     }
 
     internal fun build(body: SpringInlineTelegramHandlerBuilder.() -> Unit): SpringInlineTelegramHandler {
