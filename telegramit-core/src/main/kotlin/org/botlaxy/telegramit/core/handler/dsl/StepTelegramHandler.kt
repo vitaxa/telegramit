@@ -2,7 +2,7 @@ package org.botlaxy.telegramit.core.handler.dsl
 
 import org.botlaxy.telegramit.core.handler.HandlerCommand
 
-class ConversationTelegramHandler(
+open class StepTelegramHandler(
     val commands: List<HandlerCommand>,
     private val steps: Map<String, Step<*>>,
     val process: ProcessBlock
@@ -21,7 +21,7 @@ class ConversationTelegramHandler(
     }
 
     override fun type(): TelegramHandlerType {
-        return TelegramHandlerType.CONVERSATION
+        return TelegramHandlerType.STEP_BY_STEP
     }
 
     override fun toString(): String {

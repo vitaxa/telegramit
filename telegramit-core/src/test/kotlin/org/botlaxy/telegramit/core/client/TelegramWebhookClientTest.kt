@@ -44,12 +44,12 @@ class TelegramWebhookClientTest {
         val clientConfig = mockk<TelegramBot.TelegramWebhookClientConfig>() {
             every { host } returns "localhost"
             every { port } returns 7777
-            every { keyStore } returns KeyStore.getInstance(certFile, "testPassword".toCharArray())
-            every { keyAlias } returns "keytest"
-            every { keyStoreFile } returns certFile
-            every { keyStorePassword } returns "testPassword"
-            every { privateKeyPassword } returns "testPassword"
-            every { this@mockk.publicKeyFile } returns publicKeyFile
+            every { sslConfig?.keyStore } returns KeyStore.getInstance(certFile, "testPassword".toCharArray())
+            every { sslConfig?.keyAlias } returns "keytest"
+            every { sslConfig?.keyStoreFile } returns certFile
+            every { sslConfig?.keyStorePassword } returns "testPassword"
+            every { sslConfig?.privateKeyPassword } returns "testPassword"
+            every { sslConfig?.publicKeyFile } returns publicKeyFile
         }
         telegramWebhookClient = TelegramWebhookUpdateClient(telegramApi, updateListener, TEST_BOT_TOKEN, clientConfig)
         telegramWebhookClient.start()

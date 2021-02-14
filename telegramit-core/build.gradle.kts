@@ -1,5 +1,5 @@
 val mockkVersion = "1.9.+"
-val ktorVersion = "1.4.0"
+val ktorVersion = "1.5.1"
 
 dependencies {
     testImplementation(kotlin("test"))

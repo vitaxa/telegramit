@@ -14,14 +14,20 @@ import org.botlaxy.telegramit.core.client.*
 import org.botlaxy.telegramit.core.client.api.TelegramApi
 import org.botlaxy.telegramit.core.conversation.ConversationManager
 import org.botlaxy.telegramit.core.conversation.persistence.ConversationPersistence
-import org.botlaxy.telegramit.core.handler.dsl.ConversationTelegramHandler
+import org.botlaxy.telegramit.core.handler.dsl.StepTelegramHandler
+import org.botlaxy.telegramit.core.handler.dsl.InlineTelegramHandler
 import org.botlaxy.telegramit.core.handler.dsl.TelegramHandler
 import org.botlaxy.telegramit.core.handler.dsl.TelegramHandlerType
-import org.botlaxy.telegramit.core.handler.dsl.InlineTelegramHandler
-import org.botlaxy.telegramit.core.handler.filter.*
+import org.botlaxy.telegramit.core.handler.filter.CancelUpdateFilter
+import org.botlaxy.telegramit.core.handler.filter.HandlerUpdateFilter
+import org.botlaxy.telegramit.core.handler.filter.InlineUpdateFilter
+import org.botlaxy.telegramit.core.handler.filter.TelegramUpdateFilter
+import org.botlaxy.telegramit.core.handler.loader.DefaultHandlerScriptManager
+import org.botlaxy.telegramit.core.handler.loader.DynamicHandlerScriptManager
+import org.botlaxy.telegramit.core.handler.loader.HandlerChangeListener
 import org.botlaxy.telegramit.core.handler.loader.HandlerScriptManager
-import org.botlaxy.telegramit.core.handler.loader.collect.ScriptCollector
-import org.botlaxy.telegramit.core.handler.loader.compile.KotlinScriptCompiler
+import org.botlaxy.telegramit.core.handler.loader.collect.ClassPathScriptCollector
+import org.botlaxy.telegramit.core.handler.loader.compile.DefaultScriptCompiler
 import org.botlaxy.telegramit.core.listener.FilterUpdateListener
 import org.jetbrains.kotlin.script.jsr223.KotlinJsr223JvmLocalScriptEngineFactory
 import java.io.File
@@ -30,7 +36,6 @@ import java.net.Proxy
 import java.security.KeyStore
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
-import javax.script.ScriptEngineFactory
 
 private val logger = KotlinLogging.logger {}
 
@@ -56,10 +61,6 @@ class TelegramBot private constructor(
 
     private var telegramHttpClient: HttpClient? = null
 
-    private var conversationManager: ConversationManager? = null
-
-    private var handlerScriptManager: HandlerScriptManager? = null
-
     var telegramApi: TelegramApi? = null
         private set
 
@@ -70,25 +71,34 @@ class TelegramBot private constructor(
         }
         telegramHttpClient = buildHttpClient(proxyConfig)
         telegramApi = TelegramApi(telegramHttpClient!!, token)
+        val handlerScriptManager = handlerScriptConfig?.handlerScriptManager ?: newHandlerScriptManager()
 
-        handlerScriptManager = newHandlerScriptManager(handlerScriptConfig)
-        val handlers: List<TelegramHandler> = handlerScriptManager!!.compileHandlerFiles()
+        // Init scripts (compile and group by type)
+        val handlers: List<TelegramHandler> = handlerScriptManager.compileScripts()
         val conversationHandler = handlers
-            .filter { handler -> handler.type() == TelegramHandlerType.CONVERSATION }
-            .map { handler -> handler as ConversationTelegramHandler }
+            .filter { handler -> handler.type() == TelegramHandlerType.STEP_BY_STEP }
+            .map { handler -> handler as StepTelegramHandler }
         val inlineHandler = handlers
             .find { handler -> handler.type() == TelegramHandlerType.INLINE } as? InlineTelegramHandler
-        conversationManager = ConversationManager(
+
+        // Init conversation manager
+        val conversationManager = ConversationManager(
             telegramApi!!,
             conversationHandler,
             conversationPersistenceConfig?.conversationPersistence
         )
+        if (handlerScriptManager is DynamicHandlerScriptManager) {
+            // Following the change of handlers for the conversation status change
+            handlerScriptManager.addHandlerChangeListener(newHandlerChangeListener(conversationManager))
+        }
+
+        // Init handlers
         val customUpdateFilters = updateFilters ?: emptyList()
         val filters = mutableListOf<TelegramUpdateFilter>(*customUpdateFilters.toTypedArray())
         inlineHandler?.let { filters.add(InlineUpdateFilter(it, telegramApi!!)) }
         filters.apply {
-            add(CancelUpdateFilter(conversationManager!!))
-            add(HandlerUpdateFilter(conversationManager!!))
+            add(CancelUpdateFilter(conversationManager))
+            add(HandlerUpdateFilter(conversationManager))
         }
         val updListener = updateListener ?: FilterUpdateListener(filters)
 
@@ -104,27 +114,28 @@ class TelegramBot private constructor(
         }
         telegramUpdateClient?.close()
         telegramHttpClient?.close()
-        handlerScriptManager?.closeWatchHandler()
         logger.info { "Bot '$name' successfully stopped" }
     }
 
-    private fun newHandlerScriptManager(handlerScriptConfig: HandlerScriptConfig?): HandlerScriptManager {
-        return HandlerScriptManager(
-            KotlinScriptCompiler(handlerScriptConfig?.scriptEngineFactory ?: KotlinJsr223JvmLocalScriptEngineFactory()),
-            handlerScriptConfig?.handlerScriptPath,
-            handlerScriptConfig?.handlerHotReload ?: false,
-            handlerScriptConfig?.scriptCollector
-        ) { oldHandler, newHandler ->
+    private fun newHandlerScriptManager(): HandlerScriptManager {
+        return DefaultHandlerScriptManager(
+            DefaultScriptCompiler(KotlinJsr223JvmLocalScriptEngineFactory()),
+            ClassPathScriptCollector()
+        )
+    }
+
+    private fun newHandlerChangeListener(conversationManager: ConversationManager): HandlerChangeListener {
+        return { oldHandler, newHandler ->
             logger.debug { "Handler was changed. From $oldHandler to $newHandler" }
-            if (newHandler.type() == TelegramHandlerType.CONVERSATION) {
+            if (newHandler.type() == TelegramHandlerType.STEP_BY_STEP) {
                 val clearConversation: Boolean = conversationPersistenceConfig?.clearOnHandlerChange ?: true
                 if (clearConversation) {
-                    conversationManager?.clearAllConversation()
+                    conversationManager.clearAllConversation()
                 }
                 if (oldHandler != null) {
-                    conversationManager?.removeHandler(oldHandler as ConversationTelegramHandler)
+                    conversationManager.removeHandler(oldHandler as StepTelegramHandler)
                 }
-                conversationManager?.addHandler(newHandler as ConversationTelegramHandler)
+                conversationManager.addHandler(newHandler as StepTelegramHandler)
             }
         }
     }
@@ -302,21 +313,22 @@ class TelegramBot private constructor(
     }
 
     data class HandlerScriptConfig(
-        val handlerScriptPath: String?,
-        val handlerHotReload: Boolean,
-        val scriptCollector: ScriptCollector?,
-        val scriptEngineFactory: ScriptEngineFactory?
+        val handlerScriptManager: HandlerScriptManager?,
     )
 
     @BotDsl
     class HandlerScriptConfigBuilder {
-        var handlerScriptPath: String? = null
-        var handlerHotReload: Boolean = false
-        var scriptCollector: ScriptCollector? = null
-        var scriptEngineFactory: ScriptEngineFactory? = null
+        var handlerScriptManager: HandlerScriptManager? = null
 
         fun build(): HandlerScriptConfig {
-            return HandlerScriptConfig(handlerScriptPath, handlerHotReload, scriptCollector, scriptEngineFactory)
+            if (handlerScriptManager == null) {
+                handlerScriptManager =
+                    DefaultHandlerScriptManager(
+                        DefaultScriptCompiler(KotlinJsr223JvmLocalScriptEngineFactory()),
+                        ClassPathScriptCollector()
+                    )
+            }
+            return HandlerScriptConfig(handlerScriptManager)
         }
     }
 
@@ -358,12 +370,7 @@ class TelegramBot private constructor(
         var port: Int? = null
         var timeout: Int? = null
         var limit: Int? = null
-        var keyStore: KeyStore? = null
-        var keyAlias: String? = null
-        var keyStorePassword: String? = null
-        var privateKeyPassword: String? = null
-        var keyStoreFile: File? = null
-        var publicKeyFile: File? = null
+        var sslConfig: SslConfig? = null
 
         fun build(): TelegramClientConfig {
             return when (type) {
@@ -371,26 +378,20 @@ class TelegramBot private constructor(
                     TelegramPoolingClientConfig(type, timeout, limit)
                 }
                 TelegramClientType.WEBHOOK -> {
-                    if (keyStore == null) throw IllegalStateException("'keyStore' can't be null")
-                    if (keyAlias == null) throw IllegalStateException("'keyAlias' can't be null")
-                    if (keyStorePassword == null) throw IllegalStateException("'keyStorePassword' can't be null")
-                    if (privateKeyPassword == null) throw IllegalStateException("'privateKeyPassword' can't be null")
-                    if (keyStoreFile == null) throw IllegalStateException("'keyStoreFile' can't be null")
-                    if (publicKeyFile == null) throw IllegalStateException("'publicKeyFile' can't be null")
                     TelegramWebhookClientConfig(
                         type,
                         host,
                         port,
-                        keyStore!!,
-                        keyAlias!!,
-                        keyStorePassword!!,
-                        privateKeyPassword!!,
-                        keyStoreFile!!,
-                        publicKeyFile!!
+                        sslConfig
                     )
                 }
             }
         }
+
+        fun sslConfig(block: SslConfigBuilder.() -> Unit) {
+            sslConfig = SslConfigBuilder().apply(block).build()
+        }
+
     }
 
     class TelegramPoolingClientConfig(
@@ -403,15 +404,40 @@ class TelegramBot private constructor(
         telegramClientType: TelegramClientType,
         val host: String?,
         val port: Int?,
+        val sslConfig: SslConfig?
+    ) : TelegramClientConfig(telegramClientType)
+
+    abstract class TelegramClientConfig(val telegramClientType: TelegramClientType) {
+    }
+
+    @BotDsl
+    class SslConfigBuilder {
+        var keyStore: KeyStore? = null
+        var keyAlias: String? = null
+        var keyStorePassword: String? = null
+        var privateKeyPassword: String? = null
+        var keyStoreFile: File? = null
+        var publicKeyFile: File? = null
+
+        fun build(): SslConfig {
+            return SslConfig(
+                keyStore ?: throw IllegalStateException("'keyStore' can't be null"),
+                keyAlias ?: throw IllegalStateException("'keyAlias' can't be null"),
+                keyStorePassword ?: throw IllegalStateException("'keyStorePassword' can't be null"),
+                privateKeyPassword ?: throw IllegalStateException("'privateKeyPassword' can't be null"),
+                keyStoreFile ?: throw IllegalStateException("'keyStoreFile' can't be null"),
+                publicKeyFile ?: throw IllegalStateException("'publicKeyFile' can't be null")
+            )
+        }
+    }
+
+    data class SslConfig(
         val keyStore: KeyStore,
         val keyAlias: String,
         val keyStorePassword: String,
         val privateKeyPassword: String,
         val keyStoreFile: File,
-        val publicKeyFile: File
-    ) : TelegramClientConfig(telegramClientType)
-
-    abstract class TelegramClientConfig(val telegramClientType: TelegramClientType) {
-    }
+        val publicKeyFile: File,
+    )
 
 }
