@@ -40,6 +40,10 @@ class SpringStepTelegramHandlerBuilder(
         this.process = processor
     }
 
+    inline fun <reified T> getBean(): T {
+        return context.getBean(T::class.java)
+    }
+
     internal fun build(body: SpringStepTelegramHandlerBuilder.() -> Unit): SpringStepTelegramHandler {
         body()
         val steps = arrayListOf<Step<*>>()
