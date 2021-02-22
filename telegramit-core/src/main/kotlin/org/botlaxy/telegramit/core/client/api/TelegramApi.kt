@@ -42,7 +42,7 @@ class TelegramApi(httpClient: HttpClient, accessKey: String) {
             validateResponse { response: HttpResponse ->
                 val statusCode = response.status.value
                 when (statusCode) {
-                    in 500..599 -> throw ServerResponseException(response)
+                    in 500..599 -> throw ServerResponseException(response, "Bad response")
                 }
             }
         }

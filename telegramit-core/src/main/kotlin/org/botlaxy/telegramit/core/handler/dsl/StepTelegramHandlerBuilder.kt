@@ -17,7 +17,7 @@ class StepTelegramHandlerBuilder(private val commands: List<String>) {
 
     private val stepBuilders: MutableList<StepBuilder<*>> = arrayListOf()
     private var process: ProcessBlock? = null
-    private var commandParser: CommandParser = DefaultCommandParser()
+    private val commandParser: CommandParser = DefaultCommandParser()
 
     fun <T : Any> step(key: String, block: StepBuilder<T>.() -> Unit): StepBuilder<T> {
         val stepBuilder: StepBuilder<T> = StepBuilder<T>(key).apply(block)
