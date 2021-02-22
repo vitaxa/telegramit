@@ -31,6 +31,6 @@ jobs:
     steps:
       - name: Publish bintray
         run: gradle bintrayUpload
-          env:
-            BINTRAY_USER: ${{ secrets.BINTRAYUSER }}
-            BINTRAY_API_KEY: ${{ secrets.BINTRAYAPIKEY }}
+        env:
+          BINTRAY_USER: ${{ secrets.BINTRAYUSER }}
+          BINTRAY_API_KEY: ${{ secrets.BINTRAYAPIKEY }}
