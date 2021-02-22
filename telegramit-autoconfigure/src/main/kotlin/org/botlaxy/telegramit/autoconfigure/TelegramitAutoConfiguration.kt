@@ -1,5 +1,6 @@
 package org.botlaxy.telegramit.autoconfigure
 
+import org.botlaxy.telegramit.autoconfigure.property.TelegramPropertiesValidator
 import org.botlaxy.telegramit.autoconfigure.property.TelegramitProperties
 import org.botlaxy.telegramit.core.bot
 import org.botlaxy.telegramit.core.client.TelegramClientType
@@ -18,11 +19,19 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.support.GenericApplicationContext
+import org.springframework.validation.Validator
 
 @Configuration
 @ConditionalOnClass(SpringTelegramBot::class)
 @EnableConfigurationProperties(TelegramitProperties::class)
 class TelegramitAutoConfiguration(val telegramProperties: TelegramitProperties) {
+
+    companion object {
+        @Bean
+        fun configurationPropertiesValidator(): Validator {
+            return TelegramPropertiesValidator()
+        }
+    }
 
     @Bean
     @ConditionalOnMissingBean(name = ["telegramProperties"])

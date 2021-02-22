@@ -15,7 +15,7 @@ plugins {
 
 allprojects {
     group = "org.botlaxy"
-    version = "0.1.21"
+    version = "0.1.22"
 
     repositories {
         jcenter()
@@ -55,12 +55,13 @@ subprojects {
         implementation("com.fasterxml.jackson.core:jackson-databind:$jacksonVersion")
         implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
 
+        implementation("io.ktor:ktor-client-core:$ktorVersion")
         implementation("io.ktor:ktor-server-netty:$ktorVersion")
-        api("io.ktor:ktor-client-okhttp:$ktorVersion")
+        implementation("io.ktor:ktor-jackson:$ktorVersion")
+        implementation("io.ktor:ktor-client-okhttp:$ktorVersion")
         implementation("io.ktor:ktor-client-logging-jvm:$ktorVersion")
         implementation("io.ktor:ktor-client-json-jvm:$ktorVersion")
         implementation("io.ktor:ktor-client-jackson:$ktorVersion")
-        implementation("io.ktor:ktor-jackson:$ktorVersion")
 
         implementation("com.vdurmont:emoji-java:$emojiVersion")
         implementation("net.java.dev.jna:jna:$jnaVersion")
@@ -110,8 +111,8 @@ subprojects {
     }
 
     bintray {
-        user = project.findProperty("bintrayUser") as String?
-        key = project.findProperty("bintrayApiKey") as String?
+        user = System.getenv("BINTRAY_USER") as String?
+        key = System.getenv("BINTRAY_API_KEY") as String?
         publish = true
 
         setPublications("telegramit")
