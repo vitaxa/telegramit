@@ -30,7 +30,7 @@ jobs:
     if: github.ref == 'refs/heads/master'
     steps:
       - name: Publish bintray
-        run: gradle bintrayUpload
+        run: ./gradlew bintrayUpload
         env:
           BINTRAY_USER: ${{ secrets.BINTRAYUSER }}
           BINTRAY_API_KEY: ${{ secrets.BINTRAYAPIKEY }}
