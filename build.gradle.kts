@@ -15,7 +15,7 @@ plugins {
 
 allprojects {
     group = "org.botlaxy"
-    version = "0.1.22"
+    version = "0.1.23"
 
     repositories {
         jcenter()
@@ -30,7 +30,7 @@ val kotlinLogVersion = "1.7.7"
 val mapDb = "3.0.8"
 val jnaVersion = "4.2.2"
 val emojiVersion = "5.1.1"
-val ktorVersion = "1.5.1"
+val ktorVersion = "1.5.2"
 val mockWebServerVersion = "4.4.0"
 
 subprojects {
@@ -46,10 +46,10 @@ subprojects {
     }
 
     dependencies {
-        implementation(kotlin("stdlib-jdk8"))
+        //implementation(kotlin("stdlib-jdk8"))
         implementation(kotlin("reflect", kotlinVersion))
         implementation(kotlin("script-util", kotlinVersion))
-        implementation(kotlin("script-runtime", kotlinVersion))
+        api(kotlin("script-runtime", kotlinVersion))
         implementation(kotlin("compiler-embeddable", kotlinVersion))
         implementation(kotlin("scripting-compiler-embeddable", kotlinVersion))
         implementation("com.fasterxml.jackson.core:jackson-databind:$jacksonVersion")
@@ -58,7 +58,7 @@ subprojects {
         implementation("io.ktor:ktor-client-core:$ktorVersion")
         implementation("io.ktor:ktor-server-netty:$ktorVersion")
         implementation("io.ktor:ktor-jackson:$ktorVersion")
-        implementation("io.ktor:ktor-client-okhttp:$ktorVersion")
+        api("io.ktor:ktor-client-okhttp:$ktorVersion")
         implementation("io.ktor:ktor-client-logging-jvm:$ktorVersion")
         implementation("io.ktor:ktor-client-json-jvm:$ktorVersion")
         implementation("io.ktor:ktor-client-jackson:$ktorVersion")

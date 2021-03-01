@@ -28,14 +28,14 @@ repositories {
 
 Gradle:
 
-`implementation("org.botlaxy:telegramit-core:0.1.22")`
+`implementation("org.botlaxy:telegramit-core:0.1.23")`
 
 Maven:
 ```
 <dependency>
     <groupId>org.botlaxy</groupId>
     <artifactId>telegramit-core</artifactId>
-    <version>0.1.22</version>
+    <version>0.1.23</version>
 </dependency>
 ```
 
@@ -105,7 +105,7 @@ client {
 #### How to handle user message:
 To process message create a `kts` file in the `resources` directory with `handler` function
 
-More about using [handler](/telegramit-sample/README.md)
+More about using [handler](/telegramit-sample/simple/README.md)
 
 #### Inline mode:
 To use inline mode, you need to specify the command `/setinline` using [BotFather](https://tele.gs/botfather) select the bot for which this mode will be activated
@@ -114,7 +114,7 @@ After activating inline mode, you can start processing messages of this type, fo
 
 > only one inlineHandler can exist
 
-More about using [inlineHandler](/telegramit-sample/README.md)
+More about using [inlineHandler](/telegramit-sample/simple/README.md)
 
 > The directory for kts files can be changed via `handlerScriptConfig`
 

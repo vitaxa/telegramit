@@ -1,0 +1,6 @@
+server:
+  error:
+    include-stacktrace: never
+
+telegramit:
+  token: YOUR_TOKEN
