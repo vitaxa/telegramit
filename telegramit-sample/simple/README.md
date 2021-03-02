@@ -1,4 +1,4 @@
-Let’s consider a simple example of the Chat Bot with questioner filling. Example of this [questionary handler](./src/main/resources/handlers/questionary/questionary-dialog.kts).
+Let’s consider a simple example of the Chat Bot with questioner filling. Example of this [questionary handler](srcain/resources/handlers/questionary/questionary-dialog.kts).
  
 You should make the next step to start a command process with the Chat Bot:
 ```Kotlin
@@ -65,7 +65,7 @@ At the end of the **process block** we are answering (not necessarily) to user w
 
 I’ll show it on the scheme, so you could understand the common flow of the conversation:
 
-![Telegramit-Handler-Schema](../doc/telegramit-schema.png)
+![Telegramit-Handler-Schema](../../doc/telegramit-schema.png)
 
 ### Inline mode
 
