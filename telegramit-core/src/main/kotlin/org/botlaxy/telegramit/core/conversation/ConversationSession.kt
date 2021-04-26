@@ -5,7 +5,9 @@ import org.botlaxy.telegramit.core.client.api.TelegramApi
 import org.botlaxy.telegramit.core.client.model.*
 import org.botlaxy.telegramit.core.handler.HandlerCommand
 import org.botlaxy.telegramit.core.handler.HandlerNotFound
+import org.botlaxy.telegramit.core.handler.HandlerStepException
 import org.botlaxy.telegramit.core.handler.dsl.StepTelegramHandler
+import org.botlaxy.telegramit.core.request.TextMessage
 import java.util.*
 import java.util.concurrent.atomic.AtomicReference
 
@@ -70,8 +72,13 @@ class ConversationSession(
                 currentState.currentStep = nextStep
                 handleEntryStepBlock(currentState)
             }
+        } catch (e: HandlerStepException) {
+            logger.warn(e) { "Error thrown on step=${currentState?.currentStep}" }
+            if (e.message?.isNotEmpty() == true) sendTelegramRequest(chatId, TextMessage(e.message))
+            resetState()
+            null
         } catch (e: Exception) {
-            logger.error(e) { "Unexpected exception during process update" }
+            logger.error(e) { "Unexpected exception during conversation" }
             resetState()
             null
         }
@@ -81,7 +88,10 @@ class ConversationSession(
         processUpdateFinishListener?.invoke(conversationState)
     }
 
-    private fun handleEntryStepBlock(state: ConversationState, params: Map<String, String>? = null): TelegramRequest? {
+    private fun handleEntryStepBlock(
+        state: ConversationState,
+        params: Map<String, String>? = null
+    ): TelegramRequest? {
         val step = state.currentStep
         return if (step != null) {
             step.entry(state.ctx, params ?: emptyMap())

@@ -27,7 +27,7 @@ repositories {
     mavenCentral()
 }
 
-val telegramitVersion = "0.1.23"
+val telegramitVersion = "0.1.24"
 
 dependencies {
     // Spring
