@@ -2,15 +2,14 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinPluginWrapper
 import com.jfrog.bintray.gradle.BintrayExtension
 
 plugins {
-    kotlin("jvm") version "1.4.30"
+    kotlin("jvm") version "1.6.10"
     `maven-publish`
-    id("com.jfrog.bintray") version "1.8.5"
 
     // Spring
-    id("org.springframework.boot") version "2.4.1" apply false
+    id("org.springframework.boot") version "2.6.3" apply false
     id("io.spring.dependency-management") version "1.0.10.RELEASE" apply false
-    kotlin("kapt") version "1.4.30" apply false
-    kotlin("plugin.spring") version "1.4.30" apply false
+    kotlin("kapt") version "1.6.10" apply false
+    kotlin("plugin.spring") version "1.6.10" apply false
 }
 
 allprojects {
@@ -76,58 +75,14 @@ subprojects {
     }
 
     publishing {
-        publications {
-            create<MavenPublication>("telegramit") {
-                groupId = project.group.toString()
-                artifactId = project.name
-                version = project.version.toString()
-                from(components["java"])
-
-                artifact(sourcesJar)
-
-                pom {
-                    name.set("Telegramit")
-                    description.set("Telegram chat bot framework")
-                    licenses {
-                        license {
-                            name.set("The Apache License, Version 2.0")
-                            url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
-                        }
-                    }
-                    developers {
-                        developer {
-                            id.set("vitaxa")
-                            name.set("Vitaliy Banin")
-                            email.set("vitaxa93gamebox@gmail.com")
-                        }
-                    }
-                    scm {
-                        connection.set("scm:git:https://github.com/vitaxa/telegramit")
-                        developerConnection.set("scm:git:ssh://github.com/vitaxa/telegramit")
-                    }
+        repositories {
+            maven {
+                name = "GitHubPackages"
+                url = "https://maven.pkg.github.com/vitaxa/telegramit"
+                credentials {
+                    username = System.getenv("GITHUB_ACTOR")
+                    password = System.getenv("GITHUB_TOKEN")
                 }
-            }
-        }
-    }
-
-    bintray {
-        user = System.getenv("BINTRAY_USER") as String?
-        key = System.getenv("BINTRAY_API_KEY") as String?
-        publish = true
-
-        setPublications("telegramit")
-
-        pkg.apply {
-            repo = "telegramit"
-            name = project.name
-            githubRepo = "https://github.com/vitaxa/telegramit"
-            vcsUrl = "https://github.com/vitaxa/telegramit"
-            description = "Telegram chat bot framework"
-            setLabels("kotlin", "telegram", "chat", "bot", "dsl")
-            setLicenses("Apache-2.0")
-            desc = description
-            version.apply {
-                name = project.version.toString()
             }
         }
     }
