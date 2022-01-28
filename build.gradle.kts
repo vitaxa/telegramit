@@ -1,5 +1,4 @@
 import org.jetbrains.kotlin.gradle.plugin.KotlinPluginWrapper
-import com.jfrog.bintray.gradle.BintrayExtension
 
 plugins {
     kotlin("jvm") version "1.6.10"
@@ -37,7 +36,6 @@ subprojects {
     apply(plugin = "java")
     apply(plugin = "kotlin")
     apply(plugin = "maven-publish")
-    apply(plugin = "com.jfrog.bintray")
 
     java {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -78,7 +76,7 @@ subprojects {
         repositories {
             maven {
                 name = "GitHubPackages"
-                url = "https://maven.pkg.github.com/vitaxa/telegramit"
+                url = uri("https://maven.pkg.github.com/vitaxa/telegramit")
                 credentials {
                     username = System.getenv("GITHUB_ACTOR")
                     password = System.getenv("GITHUB_TOKEN")
