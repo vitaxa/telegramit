@@ -21,7 +21,7 @@ Telegramit is an attempt at creating a convenient framework that includes key fu
 ```
 repositories {
     maven {
-        setUrl("https://dl.bintray.com/vitaxa/telegramit/")
+        setUrl("https://maven.pkg.github.com/vitaxa/telegramit")
     }
 }
 ```
