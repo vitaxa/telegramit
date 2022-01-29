@@ -73,6 +73,38 @@ subprojects {
     }
 
     publishing {
+        publications {
+            create<MavenPublication>("telegramit") {
+                groupId = project.group.toString()
+                artifactId = project.name
+                version = project.version.toString()
+                from(components["java"])
+
+                artifact(sourcesJar)
+
+                pom {
+                    name.set("Telegramit")
+                    description.set("Telegram chat bot framework")
+                    licenses {
+                        license {
+                            name.set("The Apache License, Version 2.0")
+                            url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
+                        }
+                    }
+                    developers {
+                        developer {
+                            id.set("vitaxa")
+                            name.set("Vitaliy Banin")
+                            email.set("vitaxa93gamebox@gmail.com")
+                        }
+                    }
+                    scm {
+                        connection.set("scm:git:https://github.com/vitaxa/telegramit")
+                        developerConnection.set("scm:git:ssh://github.com/vitaxa/telegramit")
+                    }
+                }
+            }
+        }
         repositories {
             maven {
                 name = "GitHubPackages"
