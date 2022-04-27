@@ -1,6 +1,7 @@
 package org.botlaxy.telegramit.core.request
 
 import org.botlaxy.telegramit.core.client.model.*
+import java.util.concurrent.atomic.AtomicInteger
 
 @DslMarker
 annotation class KeyboardDsl
@@ -15,7 +16,7 @@ fun inlineKeyboard(body: InlineKeyboardBuilder.() -> Unit): TelegramInlineKeyboa
 
 @KeyboardDsl
 class KeyboardBuilder {
-    private var row = arrayListOf<KeyboardButton>()
+    private var row = arrayListOf<List<KeyboardButton>>()
 
     var resizeKeyboard: Boolean = true
 
@@ -25,7 +26,7 @@ class KeyboardBuilder {
 
     fun row(body: KeyboardButtonBuilder.() -> Unit) {
         val keyboardButtonBuilder = KeyboardButtonBuilder().apply(body)
-        row.addAll(keyboardButtonBuilder)
+        row.addAll(listOf(keyboardButtonBuilder))
     }
 
     fun build(body: KeyboardBuilder.() -> Unit): TelegramReplyKeyboardMarkup {
