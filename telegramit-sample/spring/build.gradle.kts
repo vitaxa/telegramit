@@ -20,14 +20,17 @@ configurations {
 }
 
 repositories {
-    mavenLocal()
     maven {
-        setUrl("https://dl.bintray.com/vitaxa/telegramit/")
+        setUrl("https://maven.pkg.github.com/vitaxa/telegramit")
+        credentials {
+            username = project.findProperty("githubUser") as String?
+            password = project.findProperty("githubToken") as String?
+        }
     }
     mavenCentral()
 }
 
-val telegramitVersion = "0.1.24"
+val telegramitVersion = "0.1.25"
 
 dependencies {
     // Spring

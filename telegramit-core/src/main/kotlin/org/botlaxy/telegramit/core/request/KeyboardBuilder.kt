@@ -17,6 +17,12 @@ fun inlineKeyboard(body: InlineKeyboardBuilder.() -> Unit): TelegramInlineKeyboa
 class KeyboardBuilder {
     private var row = arrayListOf<KeyboardButton>()
 
+    var resizeKeyboard: Boolean = true
+
+    var oneTimeKeyboard: Boolean = true
+
+    var selective: Boolean = false
+
     fun row(body: KeyboardButtonBuilder.() -> Unit) {
         val keyboardButtonBuilder = KeyboardButtonBuilder().apply(body)
         row.addAll(keyboardButtonBuilder)
@@ -24,7 +30,7 @@ class KeyboardBuilder {
 
     fun build(body: KeyboardBuilder.() -> Unit): TelegramReplyKeyboardMarkup {
         body()
-        return TelegramReplyKeyboardMarkup(row)
+        return TelegramReplyKeyboardMarkup(row, resizeKeyboard, oneTimeKeyboard, selective)
     }
 }
 

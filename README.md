@@ -28,14 +28,14 @@ repositories {
 
 Gradle:
 
-`implementation("org.botlaxy:telegramit-core:0.1.24")`
+`implementation("org.botlaxy:telegramit-core:0.1.25")`
 
 Maven:
 ```
 <dependency>
     <groupId>org.botlaxy</groupId>
     <artifactId>telegramit-core</artifactId>
-    <version>0.1.24</version>
+    <version>0.1.25</version>
 </dependency>
 ```
 
