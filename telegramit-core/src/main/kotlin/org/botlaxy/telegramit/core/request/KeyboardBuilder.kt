@@ -1,7 +1,6 @@
 package org.botlaxy.telegramit.core.request
 
 import org.botlaxy.telegramit.core.client.model.*
-import java.util.concurrent.atomic.AtomicInteger
 
 @DslMarker
 annotation class KeyboardDsl
@@ -52,11 +51,11 @@ class KeyboardButtonBuilder : ArrayList<KeyboardButton>() {
 
 @KeyboardDsl
 class InlineKeyboardBuilder {
-    private val row = arrayListOf<InlineKeyboardButton>()
+    private val row = arrayListOf<List<InlineKeyboardButton>>()
 
     fun row(body: InlineKeyboardButtonBuilder.() -> Unit) {
         val inlineKeyboardButtonBuilder = InlineKeyboardButtonBuilder().apply(body)
-        row.addAll(inlineKeyboardButtonBuilder)
+        row.addAll(listOf(inlineKeyboardButtonBuilder))
     }
 
     fun build(body: InlineKeyboardBuilder.() -> Unit): TelegramInlineKeyboardMarkup {
@@ -79,7 +78,7 @@ class InlineKeyboardButtonBuilder : ArrayList<InlineKeyboardButton>() {
 
     var switchInlineQueryCurrentChat: String? = null
 
-    var pay: Boolean = false
+    var pay: Boolean? = null
 
     fun button(text: String, body: (InlineKeyboardButtonBuilder.() -> Unit)? = null) {
         if (body != null) {

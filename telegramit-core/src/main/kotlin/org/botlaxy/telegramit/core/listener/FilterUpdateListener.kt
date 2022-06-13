@@ -21,6 +21,9 @@ class FilterUpdateListener(
         if (update.isInlineMessage()) {
             filterChain = DefaultTelegramUpdateFilterChain(updateFilters)
         }
+        if (update.callbackQuery != null) {
+            filterChain = DefaultTelegramUpdateFilterChain(updateFilters)
+        }
         filterChain?.doFilter(update)
     }
 }

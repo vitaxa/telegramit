@@ -14,15 +14,19 @@ java {
 }
 
 repositories {
-    jcenter()
     maven {
-        setUrl("https://dl.bintray.com/vitaxa/telegramit/")
+        name = "GitHubPackages"
+        url = uri("https://maven.pkg.github.com/vitaxa/telegramit")
+        credentials {
+            username = System.getenv("GITHUB_ACTOR")
+            password = System.getenv("GITHUB_TOKEN")
+        }
     }
     mavenCentral()
 }
 
 val telegramitVersion = "0.1.20"
-val ktorVersion = "1.5.1"
+val ktorVersion = "1.6.8"
 
 dependencies {
     implementation(kotlin("stdlib-jdk8"))

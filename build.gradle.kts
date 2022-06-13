@@ -1,22 +1,21 @@
 import org.jetbrains.kotlin.gradle.plugin.KotlinPluginWrapper
 
 plugins {
-    kotlin("jvm") version "1.6.10"
+    kotlin("jvm") version "1.6.21"
     `maven-publish`
 
     // Spring
     id("org.springframework.boot") version "2.6.3" apply false
     id("io.spring.dependency-management") version "1.0.10.RELEASE" apply false
-    kotlin("kapt") version "1.6.10" apply false
-    kotlin("plugin.spring") version "1.6.10" apply false
+    kotlin("kapt") version "1.6.21" apply false
+    kotlin("plugin.spring") version "1.6.21" apply false
 }
 
 allprojects {
     group = "org.botlaxy"
-    version = "0.1.26"
+    version = "0.1.28"
 
     repositories {
-        jcenter()
         mavenCentral()
     }
 }
@@ -28,7 +27,7 @@ val kotlinLogVersion = "1.7.7"
 val mapDb = "3.0.8"
 val jnaVersion = "4.2.2"
 val emojiVersion = "5.1.1"
-val ktorVersion = "1.5.2"
+val ktorVersion = "1.6.8"
 val mockWebServerVersion = "4.4.0"
 
 subprojects {

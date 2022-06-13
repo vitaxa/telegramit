@@ -1,6 +1,7 @@
 package org.botlaxy.telegramit.core.client.model
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import org.botlaxy.telegramit.core.client.model.inline.CallbackQuery
 import org.botlaxy.telegramit.core.client.model.inline.ChosenInlineQuery
 import org.botlaxy.telegramit.core.client.model.inline.InlineQuery
 
@@ -24,5 +25,8 @@ data class TelegramUpdate(
     val inlineQuery: InlineQuery?,
 
     @JsonProperty("chosen_inline_result")
-    val chosenInlineResult: ChosenInlineQuery?
+    val chosenInlineResult: ChosenInlineQuery?,
+
+    @JsonProperty("callback_query")
+    val callbackQuery: CallbackQuery?,
 )

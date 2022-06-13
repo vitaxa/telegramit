@@ -16,5 +16,5 @@ data class InlineKeyboardButton(
     @JsonProperty("switch_inline_query_current_chat")
     val switchInlineQueryCurrentChat: String? = null,
     @JsonProperty("pay")
-    val pay: Boolean = false
+    val pay: Boolean? = null
 )

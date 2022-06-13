@@ -17,13 +17,21 @@ class HandlerUpdateFilter(private val conversationManager: ConversationManager) 
     ) {
         val chatId = update.getChatId()
         logger.trace { "Execute 'HandlerUpdateFilter' '${chatId}'" }
-        if (update.getMessage() == null) {
+        if (update.getMessage() == null && update.callbackQuery == null) {
             filterChain.doFilter(update)
+            return
         }
         try {
-            val msg = update.getMessage()!!
             val conversationSession = conversationManager.getConversation(chatId)
-            conversationSession.processMessage(msg)
+            if (update.getMessage() != null) {
+                conversationSession.processMessage(update.getMessage()!!)
+            } else if (update.callbackQuery != null) {
+                if (conversationSession.conversationState == null) {
+                    filterChain.doFilter(update) // Skip callback if conversation not started
+                    return
+                }
+                conversationSession.processCallbackMessage(update.callbackQuery)
+            }
         } catch (e: HandlerNotFound) {
             logger.warn(e.message)
             filterChain.doFilter(update)

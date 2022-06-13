@@ -14,7 +14,8 @@ private val logger = KotlinLogging.logger {}
 class ConversationManager(
     private val telegramApi: TelegramApi,
     private val handlers: List<StepTelegramHandler>,
-    private val persistence: ConversationPersistence? = null
+    private val persistence: ConversationPersistence? = null,
+    private val conversationStateSubscribers: List<ConversationStateSubscriber>? = null
 ) {
 
     private val conversationSessionMap: MutableMap<Long, ConversationSession> = ConcurrentHashMap()
@@ -40,15 +41,20 @@ class ConversationManager(
                 logger.debug { "Creating new conversation for: $chatId" }
                 ConversationSession(chatId, telegramApi, handlerMap) { closeConversation(chatId) }
             }
+            if (conversationStateSubscribers?.isNotEmpty() == true) {
+                conversationStateSubscribers.forEach { conversationSession.register(it) }
+            }
             persistence?.let {
-                conversationSession.processUpdateFinishListener = { conversationState ->
-                    if (conversationState != null) {
-                        saveConversationState(chatId, conversationState)
+                conversationSession.register(object : ConversationStateSubscriber {
+                    override fun update(conversationState: ConversationState?, telegramApi: TelegramApi) {
+                        if (conversationState != null) {
+                            saveConversationState(chatId, conversationState)
+                        }
                     }
-                }
+                })
             }
         }
-        conversationSessionMap.put(chatId, conversationSession)
+        conversationSessionMap[chatId] = conversationSession
         return conversationSession
     }
 
@@ -76,7 +82,10 @@ class ConversationManager(
         }
     }
 
-    private fun loadConversationState(chatId: Long, handlerMap: Map<HandlerCommand, StepTelegramHandler>): ConversationState? {
+    private fun loadConversationState(
+        chatId: Long,
+        handlerMap: Map<HandlerCommand, StepTelegramHandler>
+    ): ConversationState? {
         logger.debug { "Load '$chatId' conversation from persistence storage" }
         val conversationData = persistence?.getConversation(chatId.toString())
         if (conversationData != null) {
@@ -93,9 +102,15 @@ class ConversationManager(
                     ConversationContext(
                         telegramApi,
                         AtomicReference(conversationData.message),
-                        conversationData.answer.toMutableMap()
+                        AtomicReference(conversationData.callbackQuery),
+                        conversationData.answer.toMutableMap(),
                     )
-                val conversationState = ConversationState(handlerCommand, handler, conversationContext)
+                val conversationState = ConversationState(
+                    handlerCommand,
+                    handler,
+                    conversationContext,
+                    ConversationStage.values().find { it.name.equals(conversationData.stage, true) }
+                        ?: ConversationStage.UNKNOWN)
                 conversationState.currentStep = handler.getStep(conversationData.stepKey)
                 return conversationState
             }
@@ -111,8 +126,10 @@ class ConversationManager(
             handlerCommand.command,
             state.currentStep!!.key,
             state.ctx.message,
+            state.ctx.callback,
             state.ctx.answer,
-            state.ctx.store
+            state.ctx.store,
+            state.stage.name
         )
         persistence?.saveConversation(chatId.toString(), conversationData)
     }

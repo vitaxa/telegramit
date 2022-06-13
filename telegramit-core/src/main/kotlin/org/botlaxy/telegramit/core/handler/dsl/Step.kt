@@ -4,7 +4,9 @@ class Step<T : Any>(
     val key: String,
     val entry: EntryBlock,
     val validation: ValidationBlock?,
+    val callbackValidationBlock: CallbackValidationBlock?,
     val resolver: ResolverBlock<T>?,
+    val callbackResolverBlock: CallbackResolverBlock<T>?,
     val next: NextStepBlock
 ) {
 

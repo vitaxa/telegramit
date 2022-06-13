@@ -75,7 +75,9 @@ class SpringStepBuilder<T : Any>(val key: String) {
 
     private var entry: EntryBlock? = null
     private var validation: ValidationBlock? = null
+    private var callbackValidation: CallbackValidationBlock? = null
     private var resolver: ResolverBlock<T>? = null
+    private var callbackResolver: CallbackResolverBlock<T>? = null
     private var next: NextStepBlock? = null
 
     fun entry(entry: EntryBlock) {
@@ -86,8 +88,16 @@ class SpringStepBuilder<T : Any>(val key: String) {
         this.validation = validation
     }
 
+    fun callbackValidation(validation: CallbackValidationBlock) {
+        this.callbackValidation = validation
+    }
+
     fun resolver(resolver: ResolverBlock<T>) {
         this.resolver = resolver
+    }
+
+    fun callbackResolver(resolver: CallbackResolverBlock<T>) {
+        this.callbackResolver = resolver
     }
 
     fun next(next: NextStepBlock) {
@@ -99,7 +109,9 @@ class SpringStepBuilder<T : Any>(val key: String) {
             key,
             entry ?: throw HandlerException("Step 'entry' block can't be null"),
             validation,
+            callbackValidation,
             resolver,
+            callbackResolver,
             next ?: defaultNext
         )
     }

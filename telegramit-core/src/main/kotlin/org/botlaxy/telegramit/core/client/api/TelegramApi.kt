@@ -3,39 +3,27 @@ package org.botlaxy.telegramit.core.client.api
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import io.ktor.client.HttpClient
-import io.ktor.client.features.HttpResponseValidator
-import io.ktor.client.features.ServerResponseException
-import io.ktor.client.request.forms.FormBuilder
-import io.ktor.client.request.forms.MultiPartFormDataContent
-import io.ktor.client.request.forms.formData
-import io.ktor.client.request.get
-import io.ktor.client.request.post
-import io.ktor.client.request.url
-import io.ktor.client.statement.HttpResponse
-import io.ktor.http.ContentType
-import io.ktor.http.Headers
-import io.ktor.http.HttpHeaders
-import io.ktor.http.contentType
-import io.ktor.util.url
-import io.ktor.utils.io.core.buildPacket
-import io.ktor.utils.io.core.writeFully
+import io.ktor.client.*
+import io.ktor.client.features.*
+import io.ktor.client.features.logging.*
+import io.ktor.client.request.*
+import io.ktor.client.request.forms.*
+import io.ktor.client.statement.*
+import io.ktor.http.*
+import io.ktor.utils.io.core.*
 import kotlinx.coroutines.runBlocking
-import mu.KotlinLogging
 import org.botlaxy.telegramit.core.client.TelegramApiException
 import org.botlaxy.telegramit.core.client.model.*
 import org.botlaxy.telegramit.core.client.model.inline.InlineQueryAnswer
 import java.io.File
 import kotlin.collections.set
 
-private val logger = KotlinLogging.logger {}
-
 class TelegramApi(httpClient: HttpClient, accessKey: String) {
 
     private val jsonMapper: ObjectMapper = jacksonObjectMapper()
         .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 
-    val rootUrl: String = "https://api.telegram.org/bot$accessKey"
+    private val rootUrl: String = "https://api.telegram.org/bot$accessKey"
 
     private val client: HttpClient = httpClient.config {
         HttpResponseValidator {
@@ -45,6 +33,10 @@ class TelegramApi(httpClient: HttpClient, accessKey: String) {
                     in 500..599 -> throw ServerResponseException(response, "Bad response")
                 }
             }
+        }
+        install(Logging) {
+            logger = Logger.DEFAULT
+            level = LogLevel.INFO
         }
     }
 

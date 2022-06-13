@@ -18,6 +18,9 @@ fun TelegramUpdate.getChatId(): Long {
         editedChannelPost?.chat?.id != null -> {
             editedChannelPost.chat.id
         }
+        callbackQuery?.message?.chat?.id != null -> {
+            callbackQuery.message.chat.id
+        }
         else -> throw IllegalStateException("chatId can't be null")
     }
 }

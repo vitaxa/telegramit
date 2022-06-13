@@ -3,6 +3,7 @@ package org.botlaxy.telegramit.core.conversation
 import mu.KotlinLogging
 import org.botlaxy.telegramit.core.client.api.TelegramApi
 import org.botlaxy.telegramit.core.client.model.*
+import org.botlaxy.telegramit.core.client.model.inline.CallbackQuery
 import org.botlaxy.telegramit.core.handler.HandlerCommand
 import org.botlaxy.telegramit.core.handler.HandlerNotFound
 import org.botlaxy.telegramit.core.handler.HandlerStepException
@@ -17,13 +18,26 @@ class ConversationSession(
     val chatId: Long,
     private val telegramApi: TelegramApi,
     private val handlerMap: Map<HandlerCommand, StepTelegramHandler>,
-    private var initialState: ConversationState? = null,
+    initialState: ConversationState? = null,
     private val finishCallback: (() -> Unit)? = null
-) {
+) : ConversationStatePublisher {
 
-    var processUpdateFinishListener: ((ConversationState?) -> Unit)? = null
+    private val listeners: MutableList<ConversationStateSubscriber> = mutableListOf()
 
-    private var conversationState: ConversationState? = initialState
+    var conversationState: ConversationState? = initialState
+        private set
+
+    override fun register(conversationStateSubscriber: ConversationStateSubscriber) {
+        listeners.add(conversationStateSubscriber)
+    }
+
+    override fun remove(conversationStateSubscriber: ConversationStateSubscriber) {
+        listeners.remove(conversationStateSubscriber)
+    }
+
+    override fun onUpdate(conversationState: ConversationState?) {
+        listeners.forEach { it.update(conversationState, telegramApi) }
+    }
 
     fun processMessage(message: TelegramMessage) {
         val currentState = conversationState
@@ -39,7 +53,8 @@ class ConversationSession(
                 conversationState = ConversationState(
                     handlerCommand,
                     handler,
-                    ConversationContext(telegramApi, AtomicReference(message))
+                    ConversationContext(telegramApi, AtomicReference(message), AtomicReference(null)),
+                    ConversationStage.ENTRY
                 )
                 val command = message.text!!
                 val commandParams = getCommandParams(command, handlerCommand.params)
@@ -85,7 +100,51 @@ class ConversationSession(
         if (conversationResponse != null) {
             sendTelegramRequest(chatId, conversationResponse)
         }
-        processUpdateFinishListener?.invoke(conversationState)
+        onUpdate(conversationState)
+    }
+
+    //TODO: refactor duplicate code
+    fun processCallbackMessage(callbackQuery: CallbackQuery) {
+        val currentState = conversationState
+            ?: throw IllegalStateException("Conversation state can't be null for callbackQuery")
+
+        val handlerHolder: HandlerHolder = getHandler(currentState, null)
+        val (handlerCommand, handler) = handlerHolder
+
+        callbackQuery.message?.let { currentState.ctx.message = it }
+        currentState.ctx.callback = callbackQuery
+        val currentStep = currentState.currentStep!!
+
+        val conversationResponse = try {
+            val validationMsg = currentStep.callbackValidationBlock?.let { block ->
+                block(callbackQuery)
+            }
+            if (validationMsg != null) {
+                return sendTelegramRequest(chatId, validationMsg)
+            }
+
+            val resolvedMsg = currentStep.callbackResolverBlock?.let { block ->
+                block(callbackQuery)
+            }
+            if (resolvedMsg != null) {
+                currentState.ctx.answer[currentStep.key] = resolvedMsg
+            } else {
+                currentState.ctx.answer[currentStep.key] = callbackQuery
+            }
+
+            val nextStepKey = currentStep.next(currentState.ctx)
+            val nextStep = nextStepKey?.let { currentState.handler.getStep(nextStepKey) }
+            currentState.currentStep = nextStep
+            handleEntryStepBlock(currentState)
+        } catch (e: Exception) {
+            logger.error(e) { "Unexpected exception during conversation" }
+            resetState()
+            null
+        }
+        if (conversationResponse != null) {
+            sendTelegramRequest(chatId, conversationResponse)
+        }
+        onUpdate(conversationState)
     }
 
     private fun handleEntryStepBlock(
@@ -100,6 +159,7 @@ class ConversationSession(
                 state.handler.process(state.ctx, params ?: emptyMap())
             } finally {
                 resetState()
+                state.stage = ConversationStage.FINISH
             }
         }
     }

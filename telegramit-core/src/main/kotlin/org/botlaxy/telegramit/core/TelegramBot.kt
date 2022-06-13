@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.DeserializationFeature
 import io.ktor.client.*
 import io.ktor.client.engine.*
-import io.ktor.client.engine.okhttp.*
+import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.features.json.*
 import io.ktor.client.features.logging.*
 import io.ktor.http.*
@@ -13,9 +13,10 @@ import okhttp3.*
 import org.botlaxy.telegramit.core.client.*
 import org.botlaxy.telegramit.core.client.api.TelegramApi
 import org.botlaxy.telegramit.core.conversation.ConversationManager
+import org.botlaxy.telegramit.core.conversation.ConversationStateSubscriber
 import org.botlaxy.telegramit.core.conversation.persistence.ConversationPersistence
-import org.botlaxy.telegramit.core.handler.dsl.StepTelegramHandler
 import org.botlaxy.telegramit.core.handler.dsl.InlineTelegramHandler
+import org.botlaxy.telegramit.core.handler.dsl.StepTelegramHandler
 import org.botlaxy.telegramit.core.handler.dsl.TelegramHandler
 import org.botlaxy.telegramit.core.handler.dsl.TelegramHandlerType
 import org.botlaxy.telegramit.core.handler.filter.CancelUpdateFilter
@@ -52,7 +53,8 @@ class TelegramBot private constructor(
     val updateListener: UpdateListener?,
     val updateFilters: List<TelegramUpdateFilter>?,
     val conversationPersistenceConfig: ConversationPersistenceConfig?,
-    val handlerScriptConfig: HandlerScriptConfig?
+    val handlerScriptConfig: HandlerScriptConfig?,
+    val conversationStateSubscribers: List<ConversationStateSubscriber>?
 ) {
 
     private val running = AtomicBoolean()
@@ -85,7 +87,8 @@ class TelegramBot private constructor(
         val conversationManager = ConversationManager(
             telegramApi!!,
             conversationHandler,
-            conversationPersistenceConfig?.conversationPersistence
+            conversationPersistenceConfig?.conversationPersistence,
+            conversationStateSubscribers
         )
         if (handlerScriptManager is DynamicHandlerScriptManager) {
             // Following the change of handlers for the conversation status change
@@ -239,6 +242,8 @@ class TelegramBot private constructor(
 
         var handlerScriptConfig: HandlerScriptConfig? = null
 
+        var conversationStateListeners: MutableList<ConversationStateSubscriber>? = null
+
         fun name(block: BotBuilder.() -> String) = apply { name = block() }
 
         fun token(block: BotBuilder.() -> String) = apply { token = block() }
@@ -267,6 +272,13 @@ class TelegramBot private constructor(
             handlerScriptConfig = HandlerScriptConfigBuilder().apply(block).build()
         }
 
+        fun addConversationStateListener(block: BotBuilder.() -> ConversationStateSubscriber) = apply {
+            if (conversationStateListeners == null) {
+                conversationStateListeners = mutableListOf()
+            }
+            conversationStateListeners!!.add(block())
+        }
+
         fun build(body: BotBuilder.() -> Unit): TelegramBot {
             body()
             return TelegramBot(
@@ -277,7 +289,8 @@ class TelegramBot private constructor(
                 updatesListener,
                 updateFilters,
                 persistenceConfig,
-                handlerScriptConfig
+                handlerScriptConfig,
+                conversationStateListeners
             )
         }
     }
