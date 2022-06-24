@@ -8,10 +8,11 @@ import org.botlaxy.telegramit.core.extension.getMessage
 
 private val logger = KotlinLogging.logger {}
 
-class CancelUpdateFilter(private val conversationManager: ConversationManager) : TelegramUpdateFilter {
+class CancelUpdateFilter : TelegramUpdateFilter {
 
     override fun handleUpdate(
         update: TelegramUpdate,
+        conversationManager: ConversationManager,
         filterChain: TelegramUpdateFilterChain
     ) {
         val chatId = update.getChatId()

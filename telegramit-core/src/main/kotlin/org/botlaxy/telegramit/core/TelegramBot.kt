@@ -100,8 +100,8 @@ class TelegramBot private constructor(
         val filters = mutableListOf<TelegramUpdateFilter>(*customUpdateFilters.toTypedArray())
         inlineHandler?.let { filters.add(InlineUpdateFilter(it, telegramApi!!)) }
         filters.apply {
-            add(CancelUpdateFilter(conversationManager))
-            add(HandlerUpdateFilter(conversationManager))
+            add(CancelUpdateFilter())
+            add(HandlerUpdateFilter())
         }
         val updListener = updateListener ?: FilterUpdateListener(filters)
 

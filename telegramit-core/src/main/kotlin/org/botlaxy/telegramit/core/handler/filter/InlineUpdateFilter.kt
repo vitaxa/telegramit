@@ -5,6 +5,7 @@ import org.botlaxy.telegramit.core.client.api.TelegramApi
 import org.botlaxy.telegramit.core.client.model.TelegramUpdate
 import org.botlaxy.telegramit.core.client.model.inline.InlineQueryAnswer
 import org.botlaxy.telegramit.core.client.model.inline.toHandlerQuery
+import org.botlaxy.telegramit.core.conversation.ConversationManager
 import org.botlaxy.telegramit.core.extension.isInlineMessage
 import org.botlaxy.telegramit.core.handler.dsl.InlineTelegramHandler
 
@@ -15,7 +16,11 @@ class InlineUpdateFilter(
     private val telegramApi: TelegramApi
 ) : TelegramUpdateFilter {
 
-    override fun handleUpdate(update: TelegramUpdate, filterChain: TelegramUpdateFilterChain) {
+    override fun handleUpdate(
+        update: TelegramUpdate,
+        conversationManager: ConversationManager,
+        filterChain: TelegramUpdateFilterChain
+    ) {
         logger.trace { "Execute 'InlineUpdateFilter'" }
         if (!update.isInlineMessage()) {
             filterChain.doFilter(update)

@@ -9,10 +9,11 @@ import org.botlaxy.telegramit.core.handler.HandlerNotFound
 
 private val logger = KotlinLogging.logger {}
 
-class HandlerUpdateFilter(private val conversationManager: ConversationManager) : TelegramUpdateFilter {
+class HandlerUpdateFilter : TelegramUpdateFilter {
 
     override fun handleUpdate(
         update: TelegramUpdate,
+        conversationManager: ConversationManager,
         filterChain: TelegramUpdateFilterChain
     ) {
         val chatId = update.getChatId()

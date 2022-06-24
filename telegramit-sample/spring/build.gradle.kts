@@ -30,7 +30,7 @@ repositories {
     mavenCentral()
 }
 
-val telegramitVersion = "0.1.28"
+val telegramitVersion = "0.1.29"
 
 dependencies {
     // Spring
