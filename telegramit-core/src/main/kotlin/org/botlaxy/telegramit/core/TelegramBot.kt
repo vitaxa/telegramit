@@ -103,7 +103,7 @@ class TelegramBot private constructor(
             add(CancelUpdateFilter())
             add(HandlerUpdateFilter())
         }
-        val updListener = updateListener ?: FilterUpdateListener(filters)
+        val updListener = updateListener ?: FilterUpdateListener(filters, conversationManager)
 
         telegramUpdateClient = resolveTelegramClient(telegramApi!!, updListener, telegramClientConfig)
         telegramUpdateClient?.start()
